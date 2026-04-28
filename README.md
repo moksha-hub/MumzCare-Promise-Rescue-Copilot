@@ -198,7 +198,7 @@ Runtime model usage:
 
 - Default verified path: no external LLM call. Decisions, routing, RAG retrieval, validation, EN/AR templates, and evals run locally.
 - Optional path: OpenRouter can be enabled with `USE_LLM_DRAFTS=true` and `OPENROUTER_API_KEY`. It may rewrite `reply_en` and `reply_ar` for tone only after the structured packet is already valid.
-- Model configured for optional path: `google/gemini-2.5-flash-lite` by default through OpenRouter, configurable via `OPENROUTER_MODEL`.
+- Model configured for optional path: `google/gemma-4-31b-it:free` by default through OpenRouter, configurable via `OPENROUTER_MODEL`.
 - Why no required runtime LLM: the Track A requirement is non-trivial AI engineering, not mandatory paid inference. This prototype satisfies that through tool use, RAG, structured output validation, multilingual handling, and evals beyond vibes while remaining reproducible without keys.
 
 Resources used:
@@ -223,6 +223,8 @@ How I used AI:
 - Eval grading: the eval suite is deterministic Python, not model-graded, so results are reproducible without paid APIs.
 
 Where I overruled agents: I rejected a broad support chatbot, avoided LangChain/LlamaIndex-style framework weight, kept OpenRouter optional, moved raw JSON/tool trace behind expanders, made EN/AR replies mandatory, and added Arabic static checks after the bilingual audit flagged that "Arabic quality" should be tested, not only claimed.
+
+Known limitation: the default classifier is rule-based and keyword-assisted. Similar messages usually work when they contain recognizable signals such as tracking, delivery, refund, pickup, damaged, delivered-but-not-received, or Arabic equivalents. Very indirect wording, unusual slang, typo-heavy text, or a message implying a refund without saying so may be classified as `unknown`, routed to human review, or occasionally placed in the wrong case type. In production, I would replace or augment this with an intent classifier or LLM/embedding-based semantic routing, then keep the current schema and safety validators as guardrails.
 
 ## Time Log
 

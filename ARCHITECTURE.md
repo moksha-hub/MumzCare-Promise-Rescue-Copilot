@@ -30,7 +30,7 @@ flowchart LR
     engine["Decision engine<br/>classify case<br/>compute SLA / urgency<br/>compute confidence<br/>block unsafe promises"]
     clock(("Fixed eval clock<br/>2026-04-27 21:15<br/>Asia/Dubai"))
     schema["Pydantic validation<br/>required EN / AR replies<br/>facts + citations for in-scope<br/>low confidence => human review<br/>no empty audit fields"]
-    llm["Optional OpenRouter<br/>tone-only rewrite<br/>cannot change facts<br/>re-validated or discarded"]
+    llm["Optional OpenRouter<br/>Gemma 4 31B free<br/>tone-only rewrite<br/>cannot change facts<br/>re-validated or discarded"]
     output["Agent output<br/>verified_facts<br/>policy_citations<br/>tool_trace<br/>uncertainty_flags<br/>reply_en + reply_ar"]
 
     input --> safety --> tools --> rag
@@ -126,6 +126,8 @@ Some confident cases still require human review. Confidence answers "do we under
 
 Confidence starts from a high base score and degrades for unknown case type, missing tracking, missing return/refund records when needed, missing citations, and uncertainty flags. This keeps confidence explainable rather than model-mysterious.
 
+Classifier limitation: the prototype uses deterministic rules plus keyword signals rather than a learned semantic intent model. It is reliable for the eval set and similar support wording, but indirect phrasing, slang, heavy typos, unusual Arabic wording, or refund intent without explicit refund language can fall back to `unknown` or require human review. That is an intentional 5-hour scope tradeoff; production should add semantic intent routing while keeping the same validation and safety layers.
+
 ## Validation Rules
 
 `DecisionPacket` is the final contract. Pydantic enforces:
@@ -218,6 +220,7 @@ Evals and unit tests are different. The eval suite checks product behavior acros
 
 - Replace synthetic fixtures with real order, tracking, return, and payment APIs.
 - Replace TF-IDF with embedding retrieval and source versioning.
+- Replace or augment rule-based classification with semantic intent routing.
 - Add agent review actions: accept, edit, reject, escalate.
 - Add audit logs for every recommendation.
 - Tune urgency thresholds with historical support labels.

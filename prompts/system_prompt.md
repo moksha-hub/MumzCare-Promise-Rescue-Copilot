@@ -1,6 +1,6 @@
 # Optional LLM Reply Refinement Prompt
 
-The default prototype does not require an LLM. If `USE_LLM_DRAFTS=true`, this is the material prompt used for reply refinement:
+The default prototype does not require an LLM. If `USE_LLM_DRAFTS=true`, this is the material prompt used for reply refinement. The default optional OpenRouter model is `google/gemma-4-31b-it:free`, configurable with `OPENROUTER_MODEL`.
 
 ```text
 Rewrite the two customer replies below without changing facts or promises.

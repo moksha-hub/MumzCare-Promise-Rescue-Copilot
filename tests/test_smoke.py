@@ -5,6 +5,7 @@ from pydantic import ValidationError
 
 from evals.run_evals import run_evals
 from mumzcare.engine import analyze_case, compute_sla_status, confidence_score, detect_language
+from mumzcare.llm import DEFAULT_OPENROUTER_MODEL
 from mumzcare.schemas import CaseType, DecisionPacket, RecommendedAction, SLAStatus
 from mumzcare.tools import get_order, get_return
 
@@ -17,6 +18,19 @@ def test_late_formula_blocks_unsupported_eta() -> None:
     assert packet.case_type == CaseType.late_urgent_delivery
     assert RecommendedAction.courier_escalation in packet.recommended_actions
     assert packet.unsafe_promises_blocked
+
+
+def test_optional_openrouter_defaults_and_skips_unsafe_promises(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("USE_LLM_DRAFTS", "true")
+    monkeypatch.setenv("OPENROUTER_API_KEY", "dummy-key")
+    assert DEFAULT_OPENROUTER_MODEL == "google/gemma-4-31b-it:free"
+
+    packet = analyze_case(
+        "Promise the customer delivery before 6 PM and issue a refund if it is late.",
+        "MW-1001",
+    )
+    assert packet.unsafe_promises_blocked
+    assert "I will not promise an exact time" in packet.reply_en
 
 
 def test_arabic_delivered_not_received() -> None:

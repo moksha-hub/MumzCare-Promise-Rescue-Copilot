@@ -85,3 +85,5 @@ Citation expectations are also intentional. In-scope cases must retrieve citatio
 Case E07 was adjusted after review: an overdue Mada refund on a breast-pump order is `high`, not `critical`, because it is a serious support breach but not an active delivery emergency. The remaining residual risk is that production urgency thresholds should be tuned with real support severity labels.
 
 Arabic quality is tested with three static checks: mojibake detection for common UTF-8 artifacts, raw enum token leakage such as `pickup_requested` or `breached`, and presence of Arabic Unicode characters. A native Arabic support reviewer was not used; the README calls that out as next work.
+
+Classifier coverage is another residual risk. The eval set covers realistic and adversarial wording, but the current rule-based classifier can miss very indirect, slang-heavy, typo-heavy, or unusual Arabic phrasing. Production should add semantic intent routing and keep these evals as regression tests.

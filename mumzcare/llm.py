@@ -9,6 +9,9 @@ from mumzcare.schemas import DecisionPacket
 load_dotenv()
 
 
+DEFAULT_OPENROUTER_MODEL = "google/gemma-4-31b-it:free"
+
+
 def llm_enabled() -> bool:
     return bool(os.getenv("OPENROUTER_API_KEY")) and os.getenv("USE_LLM_DRAFTS", "false").lower() == "true"
 
@@ -21,6 +24,7 @@ def maybe_refine_replies(packet: DecisionPacket) -> DecisionPacket:
     """
     if not llm_enabled():
         return packet
+    # Safety-critical refusals should not be reworded by the optional model.
     if packet.unsafe_promises_blocked:
         return packet
 
@@ -45,7 +49,7 @@ EN: ...
 AR: ...
 """
         response = client.chat.completions.create(
-            model=os.getenv("OPENROUTER_MODEL", "google/gemini-2.5-flash-lite"),
+            model=os.getenv("OPENROUTER_MODEL", DEFAULT_OPENROUTER_MODEL),
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2,
         )

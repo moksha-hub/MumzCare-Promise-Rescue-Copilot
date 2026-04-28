@@ -51,6 +51,8 @@ The Pydantic tradeoff is that the system may reject or escalate more cases than 
 
 The fixed evaluation clock is another tradeoff. It makes the demo reproducible, but a production system would replace it with the real current time and create relative test fixtures.
 
+The classifier is also intentionally rule-based. That keeps the prototype explainable and easy to evaluate in 5 hours, but it can miss indirect, typo-heavy, slang, or unusual Arabic phrasing. A production system should use a semantic intent classifier or LLM router, then preserve the current schema, citations, uncertainty flags, and unsafe-promise blockers as the safety boundary.
+
 ## Arabic Tradeoff
 
 Arabic replies are written as native MSA-style support copy, not English translated word by word. This is safer for a regional ecommerce platform than trying to imitate dialects without native review.
