@@ -210,6 +210,9 @@ def classify_case(lower: str, message: str, order: dict, tracking: dict | None, 
 def compute_sla_status(case_type: CaseType, order: dict, tracking: dict | None, returns: dict | None) -> SLAStatus:
     promised = parse_dt(order["promised_delivery_at"])
     if case_type == CaseType.late_urgent_delivery and promised:
+        eta = parse_dt(tracking.get("eta")) if tracking else None
+        if eta and eta <= promised:
+            return SLAStatus.on_track
         if order["status"] != "delivered" and promised < NOW:
             return SLAStatus.breached
         if order["status"] != "delivered" and promised - NOW <= timedelta(hours=2):
@@ -239,7 +242,9 @@ def compute_urgency(case_type: CaseType, sla_status: SLAStatus, order: dict, pro
     urgent_product = bool(product and product.get("urgent_essential"))
     emotional_terms = any(word in lower for word in ["baby", "newborn", "urgent", "today", "formula", "milk"])
     if urgent_product and sla_status == SLAStatus.breached:
-        return Urgency.critical
+        if case_type == CaseType.late_urgent_delivery:
+            return Urgency.critical
+        return Urgency.high
     if case_type in {CaseType.delivered_not_received, CaseType.stock_cancellation} and urgent_product:
         return Urgency.high
     if case_type == CaseType.damaged_or_wrong_item and urgent_product:

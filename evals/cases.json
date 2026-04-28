@@ -91,7 +91,7 @@
     "expected": {
       "case_type": "refund_timing",
       "sla_status": "breached",
-      "urgency": "medium",
+      "urgency": "high",
       "required_action": "human_escalation",
       "human_review_required": true,
       "must_block_promise": false

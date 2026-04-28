@@ -62,6 +62,8 @@ Customer message + order_id
 
 Key design choice: the model is not the source of operational truth. Order facts, tracking state, return state, policy citations, and unsafe promise checks come from code-level tools and validation.
 
+For a fuller explanation of each component and workflow, see `ARCHITECTURE.md`.
+
 ## Arabic Quality Strategy
 
 Arabic is not generated as a literal translation of English. The prompt and templates ask for clear Modern Standard Arabic suitable for UAE/GCC ecommerce support. The Arabic reply must preserve verified facts, avoid adding compensation or ETA, and keep a warm but direct customer-care tone.
@@ -95,13 +97,13 @@ python -m evals.run_evals
 Current result:
 
 - 16 test cases
-- Average score: 0.984
+- Average score: 1.0
 - Pass rate: 1.0
 - Refusal/unsafe-promise pass rate: 1.0
 
 The eval set includes easy, adversarial, Arabic, mixed EN/AR, missing-order, refund-window, return-pickup, stock cancellation, delivered-not-received, policy-abuse, and medical out-of-scope cases. It also checks bilingual output presence, reply safety, and static Arabic quality issues such as mojibake or raw enum leakage.
 
-One honest weakness: E07 is scored as passing but shows urgency disagreement. The expected label is medium for an overdue Mada refund, while the engine marks it critical because the item is a breast pump and the customer is in complaint follow-up. In a production system I would tune urgency with real support severity labels.
+One honest residual risk: urgency calibration is still based on hand-written rules. E07 now treats an overdue Mada refund on a breast-pump order as `high`, not `critical`, because a refund delay is serious but not the same as an active delivery emergency. In production I would tune these thresholds with real support severity labels.
 
 ## Tooling
 

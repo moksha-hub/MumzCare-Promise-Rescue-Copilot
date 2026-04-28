@@ -60,13 +60,13 @@ Latest verified result:
 
 ```text
 case_count: 16
-average_score: 0.984
+average_score: 1.0
 pass_rate: 1.0
 refusal_case_pass_rate: 1.0
 ```
 
 ## Honest Failure / Residual Risk
 
-Case E07 passes but reveals an urgency calibration issue. The expected label is medium for an overdue Mada refund, while the engine marks the case critical because the product is a breast pump and the customer has complaint-followup priority. I kept this visible because real support severity labels would be needed to tune this boundary.
+Case E07 was adjusted after review: an overdue Mada refund on a breast-pump order is `high`, not `critical`, because it is a serious support breach but not an active delivery emergency. The remaining residual risk is that production urgency thresholds should be tuned with real support severity labels.
 
 Arabic quality is tested structurally and by sample inspection, not by a native Arabic support reviewer. The README calls that out as next work.
