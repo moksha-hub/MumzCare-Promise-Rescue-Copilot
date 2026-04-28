@@ -31,6 +31,8 @@ The LLM is optional. The default path is deterministic and fully runnable withou
 
 ## Setup
 
+Windows PowerShell:
+
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
@@ -40,10 +42,30 @@ python -m mumzcare.cli analyze --order-id MW-1001 --message "My baby formula was
 streamlit run streamlit_app.py
 ```
 
+macOS/Linux:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python -m evals.run_evals
+python -m mumzcare.cli analyze --order-id MW-1001 --message "My baby formula was promised today and tracking has not moved."
+streamlit run streamlit_app.py
+```
+
 The repo runs without paid keys. Optional model drafting:
+
+Windows PowerShell:
 
 ```bash
 copy .env.example .env
+# set OPENROUTER_API_KEY and USE_LLM_DRAFTS=true
+```
+
+macOS/Linux:
+
+```bash
+cp .env.example .env
 # set OPENROUTER_API_KEY and USE_LLM_DRAFTS=true
 ```
 
@@ -63,6 +85,17 @@ Customer message + order_id
 Key design choice: the model is not the source of operational truth. Order facts, tracking state, return state, policy citations, and unsafe promise checks come from code-level tools and validation.
 
 For a fuller explanation of each component and workflow, see `ARCHITECTURE.md`.
+
+## Demo Surface
+
+The Streamlit app keeps the agent-facing decision simple:
+
+- Top line: case type, SLA status, urgency, confidence, detected input language.
+- Main answer: recommended actions plus the English/Arabic reply drafts.
+- Grounding: verified facts and the strongest policy citation.
+- Audit evidence: full citations, tool trace, and raw validated JSON are available in expanders.
+
+This is intentional. A support agent should not have to read a debug dump, but a reviewer can still inspect how the answer was grounded.
 
 ## Arabic Quality Strategy
 
@@ -85,6 +118,18 @@ Hard rules:
 - Malformed output: fail validation instead of silently passing.
 
 The product principle is promise safety: it is better to say "I do not know yet" than to invent a delivery time, refund approval, or policy exception.
+
+## Tradeoffs
+
+Why this problem: I chose promise rescue because it is a real support pain point with concrete failure modes: broken delivery promises, missing items, delayed refunds, unclear return pickup, and unsafe agent replies. It is narrower and more testable than a full chatbot, but still valuable for customer trust and support operations.
+
+What I rejected: a gift finder, PDP generator, review summarizer, duplicate catalog detector, and full support chatbot. The first three are easier to fake with polished prose. Duplicate detection is valuable but hard to defend without real catalog data. A chatbot is too broad for a 5-hour prototype and harder to evaluate safely.
+
+Model and architecture choice: the default system is deterministic and local because reviewers should be able to run it without paid keys. RAG provides policy grounding, Pydantic validates structure, rule-based tools verify order facts, and optional OpenRouter refinement can improve wording only after the packet is already valid.
+
+What I cut: live backend integrations, courier APIs, real refund actions, image evidence for damaged items, fine-tuning, vector databases, and model-graded evals.
+
+What I would build next: real API adapters, embedding retrieval, policy versioning, native Arabic QA, support-agent accept/edit/reject feedback, and severity calibration from historical tickets.
 
 ## Evals
 
@@ -118,6 +163,13 @@ Tools used:
 - Pytest and the custom eval runner for regression checks.
 - OpenRouter is supported as an optional reply-refinement path, but the default verified run does not require a key.
 
+Resources used:
+
+- Official Mumzworld public pages for delivery, FAQ, returns, and contact policy grounding.
+- Public customer-review signals for problem discovery only.
+- Synthetic order, tracking, product, and return fixtures for implementation and evals.
+- No retailer product-page scraping.
+
 How I used AI:
 
 - Pair-coding and implementation: Codex proposed and edited code; I kept deterministic tools, Pydantic validation, and evals as the source of truth.
@@ -129,11 +181,15 @@ Where I overruled agents: I rejected a broad support chatbot, avoided LangChain/
 
 ## Time Log
 
-- 0:00-0:45 - Re-read Track A, validated pain point, scoped the promise-rescue wedge.
-- 0:45-1:45 - Built schemas, synthetic data, policy fixture, and deterministic tools.
-- 1:45-2:45 - Implemented RAG, decision engine, bilingual replies, and safety checks.
-- 2:45-3:45 - Added eval runner, 16 cases, and smoke tests.
-- 3:45-4:30 - Built Streamlit UI and CLI.
-- 4:30-5:00 - Wrote README, EVALS, TRADEOFFS, and Loom scenarios.
+- 0:00-0:45 - Re-read Track A, validated the promise-rescue pain point, and rejected broader ideas.
+- 0:45-1:45 - Built schemas, synthetic fixtures, policy notes, and deterministic order/tracking/return tools.
+- 1:45-2:45 - Implemented RAG, decision logic, bilingual replies, safety checks, and optional LLM refinement.
+- 2:45-4:00 - Added eval runner, 16 cases, expanded unit tests, Streamlit UI, and CLI.
+- 4:00-5:00 - Wrote README, EVALS, TRADEOFFS, ARCHITECTURE, and Loom scenarios.
 
 If spending more than 5 hours in a real submission, I would state the overage honestly and attribute it to Arabic QA and eval tuning.
+
+## Submission Checklist
+
+- GitHub repo: push this local repository to GitHub and paste the repo URL here.
+- Loom: record the 3-minute walkthrough from `demos/loom_scenarios.md` and paste the Loom URL here.

@@ -23,7 +23,7 @@ The implementation is intentionally small:
 - Pydantic schema for structured output
 - optional OpenRouter reply refinement
 - Streamlit UI and CLI
-- eval runner and smoke tests
+- eval runner and focused unit tests
 
 This is less flashy than a multi-agent framework, but easier to run, explain, and evaluate in under 5 minutes.
 

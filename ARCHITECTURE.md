@@ -100,6 +100,24 @@ Known limitation: TF-IDF is weaker than embeddings for semantic synonyms. A prod
 
 The CLI writes UTF-8 JSON directly so Arabic text works on Windows terminals.
 
+## Output Shape
+
+Every successful analysis returns a `DecisionPacket`:
+
+- `input_language`: `en`, `ar`, or `mixed`
+- `case_type`, `sla_status`, `urgency`
+- `recommended_actions`
+- `verified_facts`
+- `policy_citations` with section, score, and source URL
+- `confidence`
+- `human_review_required`
+- `uncertainty_flags`
+- `unsafe_promises_blocked`
+- `reply_en` and `reply_ar`
+- `tool_trace`
+
+This is deliberately more than a support reply. The structured packet makes the result machine-readable, auditable, and testable.
+
 ## Evaluation
 
 The eval suite has 16 golden cases and 11 metrics:
