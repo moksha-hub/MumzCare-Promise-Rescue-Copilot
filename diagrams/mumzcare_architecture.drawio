@@ -1,0 +1,82 @@
+<mxfile host="app.diagrams.net" modified="2026-04-28T00:00:00.000Z" agent="Codex" version="24.7.17" type="device">
+  <diagram id="mumzcare-architecture" name="MumzCare Architecture">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="MumzCare Promise Rescue Copilot" style="text;html=1;strokeColor=none;fillColor=none;fontSize=26;fontStyle=1;fontColor=#1F2937;align=center;" vertex="1" parent="1">
+          <mxGeometry x="420" y="30" width="560" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="input" value="Customer Message&lt;br&gt;+ Order ID&lt;br&gt;EN / AR / mixed" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#E0F2FE;strokeColor=#0284C7;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="130" width="180" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="safety" value="Safety Gates&lt;br&gt;medical refusal&lt;br&gt;policy-abuse refusal&lt;br&gt;missing / unknown order" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#FEE2E2;strokeColor=#DC2626;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="300" y="120" width="210" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="tools" value="Tool Lookups&lt;br&gt;get_order&lt;br&gt;get_tracking&lt;br&gt;get_return&lt;br&gt;get_product" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#DCFCE7;strokeColor=#16A34A;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="570" y="110" width="200" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="data" value="Synthetic Backend&lt;br&gt;orders.json&lt;br&gt;tracking_events.json&lt;br&gt;returns.json&lt;br&gt;products.json" style="shape=cylinder3d;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#ECFDF5;strokeColor=#15803D;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="570" y="300" width="200" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="rag" value="Policy RAG&lt;br&gt;split ## sections&lt;br&gt;TF-IDF unigram / bigram&lt;br&gt;top citations + scores" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#FEF3C7;strokeColor=#D97706;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="830" y="110" width="230" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="policy" value="policy_docs.md&lt;br&gt;section chunks&lt;br&gt;source URL map" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#FFFBEB;strokeColor=#B45309;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="845" y="300" width="200" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="engine" value="Decision Engine&lt;br&gt;classify case&lt;br&gt;compute SLA / urgency&lt;br&gt;choose actions&lt;br&gt;block unsafe promises" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#EDE9FE;strokeColor=#7C3AED;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="380" y="500" width="240" height="140" as="geometry"/>
+        </mxCell>
+        <mxCell id="schema" value="Pydantic Validation&lt;br&gt;required EN / AR replies&lt;br&gt;facts + citations for in-scope&lt;br&gt;low confidence =&gt; human review&lt;br&gt;no empty audit fields" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#FCE7F3;strokeColor=#DB2777;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="700" y="490" width="260" height="160" as="geometry"/>
+        </mxCell>
+        <mxCell id="llm" value="Optional OpenRouter&lt;br&gt;tone-only rewrite&lt;br&gt;cannot change facts&lt;br&gt;re-validated or discarded" style="rounded=1;dashed=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#F3F4F6;strokeColor=#6B7280;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1030" y="500" width="220" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="output" value="Agent Output&lt;br&gt;verified_facts&lt;br&gt;policy_citations&lt;br&gt;tool_trace&lt;br&gt;uncertainty_flags&lt;br&gt;reply_en + reply_ar" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#DBEAFE;strokeColor=#2563EB;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="550" y="720" width="300" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="clock" value="Fixed Eval Clock&lt;br&gt;2026-04-27 21:15&lt;br&gt;Asia/Dubai" style="ellipse;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#475569;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="115" y="510" width="150" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="e1" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#334155;" edge="1" parent="1" source="input" target="safety">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e2" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#334155;" edge="1" parent="1" source="safety" target="tools">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e3" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#334155;" edge="1" parent="1" source="tools" target="rag">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e4" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#15803D;" edge="1" parent="1" source="tools" target="data">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e5" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#B45309;" edge="1" parent="1" source="rag" target="policy">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e6" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#334155;" edge="1" parent="1" source="tools" target="engine">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e7" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#334155;" edge="1" parent="1" source="rag" target="engine">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e8" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#334155;" edge="1" parent="1" source="engine" target="schema">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e9" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#6B7280;dashed=1;" edge="1" parent="1" source="schema" target="llm">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e10" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#334155;" edge="1" parent="1" source="schema" target="output">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e11" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#6B7280;dashed=1;" edge="1" parent="1" source="llm" target="output">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e12" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#475569;" edge="1" parent="1" source="clock" target="engine">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

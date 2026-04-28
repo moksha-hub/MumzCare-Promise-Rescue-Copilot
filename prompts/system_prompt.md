@@ -17,3 +17,5 @@ AR: ...
 ```
 
 The important instruction is that the model may improve tone but may not change verified facts. The application validates and displays the original decision packet either way.
+
+After a rewrite, the application re-validates the packet with Pydantic. If the optional model output is missing the expected `EN:` / `AR:` markers, returns empty text, or causes validation to fail, the deterministic original replies are kept.

@@ -88,6 +88,10 @@ Key design choice: the model is not the source of operational truth. Order facts
 
 For a fuller explanation of each component and workflow, see `ARCHITECTURE.md`.
 
+Editable architecture diagram: `diagrams/mumzcare_architecture.drawio`.
+
+Deterministic timing note: `mumzcare/tools.py` fixes `NOW` at `2026-04-27 21:15` in the `Asia/Dubai` timezone. That is deliberate for this take-home so SLA, return-pickup, and refund-window evals are reproducible on any reviewer machine.
+
 ## Demo Surface
 
 The Streamlit app keeps the agent-facing decision simple:
@@ -97,7 +101,7 @@ The Streamlit app keeps the agent-facing decision simple:
 - Grounding: verified facts and the strongest policy citation.
 - Audit evidence: full citations, tool trace, and raw validated JSON are available in expanders.
 
-This is intentional. A support agent should not have to read a debug dump, but a reviewer can still inspect how the answer was grounded.
+This is intentional. A support agent should not have to read a debug dump, but a reviewer can still inspect how the answer was grounded. `tool_trace` is an audit artifact: it shows which lookup tools were actually called before the recommendation was produced.
 
 ## Arabic Quality Strategy
 
@@ -132,6 +136,16 @@ The assignment calls out several failure modes. This prototype treats them as ex
 - Malformed JSON or empty-string fields: Pydantic validates the `DecisionPacket`; in-scope decisions require facts and citations, and list fields reject empty strings.
 - Confident out-of-scope answers: medical advice and policy-abuse requests return `out_of_scope`, refusal actions, blocked-promise notes, and human escalation.
 
+Schema guardrails in `DecisionPacket`:
+
+- `reply_en` and `reply_ar` are required non-empty strings.
+- `confidence` and citation scores are bounded from `0.0` to `1.0`.
+- In-scope cases require `verified_facts`.
+- In-scope cases require at least one `policy_citation`.
+- `out_of_scope` and `unknown` cases are intentionally allowed to have no citations because medical refusals, policy-abuse refusals, and missing-order cases should not pretend to cite an irrelevant policy.
+- If `confidence < 0.65`, `human_review_required` must be true.
+- List fields such as `verified_facts`, `uncertainty_flags`, `unsafe_promises_blocked`, and `tool_trace` reject empty strings.
+
 ## Tradeoffs
 
 Why this problem: I chose promise rescue because it is a real support pain point with concrete failure modes: broken delivery promises, missing items, delayed refunds, unclear return pickup, and unsafe agent replies. It is narrower and more testable than a full chatbot, but still valuable for customer trust and support operations.
@@ -160,6 +174,8 @@ Current result:
 - Refusal/unsafe-promise pass rate: 1.0
 
 The eval set includes easy, adversarial, Arabic, mixed EN/AR, missing-order, refund-window, return-pickup, stock cancellation, delivered-not-received, policy-abuse, and medical out-of-scope cases. It also checks bilingual output presence, reply safety, and static Arabic quality issues such as mojibake or raw enum leakage.
+
+Evals and unit tests are separate on purpose. Evals are product-behavior benchmarks: they check whether the copilot makes the right support decision across realistic and adversarial scenarios. Unit tests are logic checks: they cover language detection, SLA calculation, confidence degradation, schema failure behavior, and key safety paths.
 
 One honest residual risk: urgency calibration is still based on hand-written rules. E07 now treats an overdue Mada refund on a breast-pump order as `high`, not `critical`, because a refund delay is serious but not the same as an active delivery emergency. In production I would tune these thresholds with real support severity labels.
 

@@ -65,6 +65,17 @@ pass_rate: 1.0
 refusal_case_pass_rate: 1.0
 ```
 
+## Reproducibility
+
+The eval suite is deterministic Python, not model-graded. It does not call OpenRouter or any hosted model. Time-sensitive cases use the fixed `NOW` timestamp in `mumzcare/tools.py`: `2026-04-27 21:15` in `Asia/Dubai`. That keeps breached/on-track SLA, return-pickup, and refund-window labels stable across reviewer machines.
+
+The eval harness and unit tests serve different purposes:
+
+- `python -m evals.run_evals` checks product behavior against 16 realistic and adversarial support cases.
+- `python -m pytest` checks implementation logic such as language detection, SLA computation, confidence degradation, and schema validation failures.
+
+Citation expectations are also intentional. In-scope cases must retrieve citations. `out_of_scope` and `unknown` cases may have no citations because a medical refusal, policy-abuse refusal, or missing-order response should not invent policy grounding.
+
 ## Honest Failure / Residual Risk
 
 Case E07 was adjusted after review: an overdue Mada refund on a breast-pump order is `high`, not `critical`, because it is a serious support breach but not an active delivery emergency. The remaining residual risk is that production urgency thresholds should be tuned with real support severity labels.

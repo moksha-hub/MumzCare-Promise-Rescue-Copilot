@@ -39,6 +39,14 @@ The boundary is:
 - safety checks block unsafe promises
 - optional LLM improves wording only
 
+## Auditability Choice
+
+The output intentionally includes more than a final reply. `verified_facts`, `policy_citations`, `tool_trace`, `confidence`, `uncertainty_flags`, and `unsafe_promises_blocked` form an audit trail. This makes the prototype easier to grade and closer to a real internal support tool, where a supervisor needs to know why a recommendation was made.
+
+I also chose strict schema validation because several Track A failure modes are structural: malformed JSON, empty fields, unsupported claims, and confident out-of-scope answers. Pydantic makes those failures explicit instead of relying on prompt wording.
+
+The fixed evaluation clock is another tradeoff. It makes the demo reproducible, but a production system would replace it with the real current time and create relative test fixtures.
+
 ## Arabic Tradeoff
 
 Arabic replies are written as native MSA-style support copy, not English translated word by word. This is safer for a regional ecommerce platform than trying to imitate dialects without native review.

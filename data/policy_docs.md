@@ -4,6 +4,10 @@ These notes are a compact, citation-friendly policy fixture for the prototype.
 They are grounded in public Mumzworld shipping, FAQ, returns, and contact pages,
 but are not a scrape of product or retailer catalog pages.
 
+Retrieval note: `mumzcare/rag.py` splits this file by `##` headings, indexes each
+section with TF-IDF, and maps section names to public source URLs in code. The
+copilot cites matching sections, not the whole document.
+
 Sources:
 - https://www.mumzworld.com/en/shipping-rates
 - https://www.mumzworld.com/en/faq
