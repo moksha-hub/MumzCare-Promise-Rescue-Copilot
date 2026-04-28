@@ -5,9 +5,10 @@ from pydantic import ValidationError
 
 from evals.run_evals import run_evals
 from mumzcare.engine import analyze_case, compute_sla_status, confidence_score, detect_language
+from mumzcare.journey import build_order_journey
 from mumzcare.llm import DEFAULT_OPENROUTER_MODEL
 from mumzcare.schemas import CaseType, DecisionPacket, RecommendedAction, SLAStatus
-from mumzcare.tools import get_order, get_return
+from mumzcare.tools import get_order, get_product, get_return, get_tracking
 
 
 def test_late_formula_blocks_unsupported_eta() -> None:
@@ -31,6 +32,23 @@ def test_optional_openrouter_defaults_and_skips_unsafe_promises(monkeypatch: pyt
     )
     assert packet.unsafe_promises_blocked
     assert "I will not promise an exact time" in packet.reply_en
+
+
+def test_blank_message_requires_input() -> None:
+    packet = analyze_case("", "MW-1001")
+    assert packet.case_type == CaseType.unknown
+    assert packet.confidence == 0.4
+    assert packet.tool_trace == ["input.empty_message"]
+
+
+def test_order_journey_exposes_delivery_lifecycle() -> None:
+    order = get_order("MW-1001")
+    assert order is not None
+    rows = build_order_journey(order, get_tracking("MW-1001"), get_return("MW-1001"), get_product("FORMULA-APT-1"))
+    stages = [row["Stage"] for row in rows]
+    assert "1. Order received" in stages
+    assert "6. In transit / out for delivery" in stages
+    assert any("carrier ETA unavailable" in row["Verified evidence"] for row in rows)
 
 
 def test_arabic_delivered_not_received() -> None:

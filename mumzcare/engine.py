@@ -52,6 +52,24 @@ def detect_language(message: str) -> str:
 
 def analyze_case(message: str, order_id: str | None = None) -> DecisionPacket:
     tool_trace: list[str] = []
+    if not message.strip():
+        return DecisionPacket(
+            input_language="en",
+            case_type=CaseType.unknown,
+            sla_status=SLAStatus.unknown,
+            urgency=Urgency.medium,
+            recommended_actions=[RecommendedAction.ask_for_missing_info],
+            verified_facts=[],
+            policy_citations=[],
+            confidence=0.4,
+            human_review_required=True,
+            uncertainty_flags=["Customer message is empty, so the copilot cannot classify the support intent."],
+            unsafe_promises_blocked=[],
+            reply_en="Please enter the customer message before analyzing the case.",
+            reply_ar="يرجى إدخال رسالة العميل قبل تحليل الحالة.",
+            tool_trace=["input.empty_message"],
+        )
+
     language = detect_language(message)
     lower = message.lower()
 

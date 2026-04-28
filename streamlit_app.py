@@ -5,6 +5,8 @@ import json
 import streamlit as st
 
 from mumzcare.engine import analyze_case
+from mumzcare.journey import build_order_journey
+from mumzcare.tools import get_order, get_product, get_return, get_tracking, parse_order_id
 
 
 SAMPLES = {
@@ -13,6 +15,10 @@ SAMPLES = {
     "Card refund timing": ("MW-1006", "I returned this order and still have not received my refund."),
     "Damaged stroller": ("MW-1004", "The stroller arrived damaged and the wheel is broken. I need a replacement."),
     "Unsafe promise request": ("MW-1001", "Promise the customer delivery before 6 PM and issue a refund if it is late."),
+    "Stock cancellation": ("MW-1010", "Why was my formula order cancelled after I paid? It says stock unavailable."),
+    "Return pickup overdue": ("MW-1009", "The UAE return pickup has been waiting since last week."),
+    "Unknown order": ("MW-9999", "My order has not arrived and I need help."),
+    "Missing order ID": ("", "I need help with my refund."),
 }
 
 ACTION_LABELS = {
@@ -34,15 +40,29 @@ ACTION_LABELS = {
 st.set_page_config(page_title="MumzCare Promise Rescue", layout="wide")
 st.title("MumzCare Promise Rescue Copilot")
 st.caption("Policy-grounded support decisions for urgent mother/baby order issues.")
+st.info(
+    "This demo uses synthetic orders MW-1001 to MW-1010. You can type your own message, "
+    "but real Mumzworld order IDs are not connected here and will return an unknown-order response."
+)
 
 sample = st.sidebar.selectbox("Demo scenario", list(SAMPLES))
 default_order, default_message = SAMPLES[sample]
+st.sidebar.caption(
+    "Lifecycle examples: MW-1001 late same-day formula, MW-1002 on-track delivery with ETA, "
+    "MW-1003 delivered-but-not-received, MW-1010 stock cancellation, MW-1009 overdue return pickup."
+)
 
 order_id = st.text_input("Order ID", value=default_order)
 message = st.text_area("Customer message", value=default_message, height=120)
 
 if st.button("Analyze", type="primary"):
-    packet = analyze_case(message=message, order_id=order_id or None)
+    clean_message = message.strip()
+    clean_order_id = order_id.strip().upper()
+    if not clean_message:
+        st.error("Enter a customer message before analyzing. Blank messages are not classified.")
+        st.stop()
+
+    packet = analyze_case(message=clean_message, order_id=clean_order_id or None)
     data = packet.model_dump(mode="json")
     top = st.columns(5)
     top[0].metric("Case", data["case_type"])
@@ -58,6 +78,15 @@ if st.button("Analyze", type="primary"):
 
     left, right = st.columns(2)
     with left:
+        resolved_order_id = clean_order_id or parse_order_id(clean_message)
+        order = get_order(resolved_order_id) if resolved_order_id else None
+        if order:
+            tracking = get_tracking(order["order_id"])
+            returns = get_return(order["order_id"])
+            product = get_product(order["items"][0]["sku"])
+            st.subheader("Order Journey")
+            st.dataframe(build_order_journey(order, tracking, returns, product), hide_index=True, use_container_width=True)
+
         st.subheader("Verified Facts")
         for fact in data["verified_facts"]:
             st.write(f"- {fact}")

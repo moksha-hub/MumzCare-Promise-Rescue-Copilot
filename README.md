@@ -99,6 +99,9 @@ Deterministic timing note: `mumzcare/tools.py` fixes `NOW` at `2026-04-27 21:15`
 The Streamlit app keeps the agent-facing decision simple:
 
 - Top line: case type, SLA status, urgency, confidence, detected input language.
+- Demo boundary: the app uses synthetic orders `MW-1001` through `MW-1010`; custom messages work against those orders, while real external order IDs return an explicit unknown-order response.
+- Input validation: blank customer messages are blocked before analysis so stale/default order facts are not shown as a real decision.
+- Order journey: known orders show a lifecycle table from order received, payment check, stock reservation, pick/pack, courier handoff, in-transit/out-for-delivery, delivery confirmation, and return/refund stages when available.
 - Main answer: recommended actions plus the English/Arabic reply drafts.
 - Grounding: verified facts and the strongest policy citation.
 - Audit evidence: full citations, tool trace, and raw validated JSON are available in expanders.

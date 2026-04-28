@@ -178,6 +178,8 @@ Known limitation: TF-IDF is weaker than embeddings for semantic synonyms. A prod
 
 The CLI writes UTF-8 JSON directly so Arabic text works on Windows terminals.
 
+The UI adds two demo-oriented protections around the engine: it blocks blank messages before analysis, and it shows an order journey table for known synthetic orders so reviewers can inspect fulfillment state beyond the final support classification.
+
 ## Output Shape
 
 Every successful analysis returns a `DecisionPacket`:
