@@ -1,0 +1,122 @@
+[
+  {
+    "order_id": "MW-1001",
+    "customer_id": "C-001",
+    "country": "UAE",
+    "emirate": "Dubai",
+    "created_at": "2026-04-27T08:15:00+04:00",
+    "promised_delivery_at": "2026-04-27T20:00:00+04:00",
+    "status": "out_for_delivery",
+    "payment_method": "card",
+    "priority": "new_mom",
+    "items": [{"sku": "FORMULA-APT-1", "qty": 2}]
+  },
+  {
+    "order_id": "MW-1002",
+    "customer_id": "C-002",
+    "country": "UAE",
+    "emirate": "Dubai",
+    "created_at": "2026-04-27T09:10:00+04:00",
+    "promised_delivery_at": "2026-04-27T23:00:00+04:00",
+    "status": "out_for_delivery",
+    "payment_method": "card",
+    "priority": "normal",
+    "items": [{"sku": "DIAPER-PAMP-S3", "qty": 1}]
+  },
+  {
+    "order_id": "MW-1003",
+    "customer_id": "C-003",
+    "country": "UAE",
+    "emirate": "Sharjah",
+    "created_at": "2026-04-27T07:50:00+04:00",
+    "promised_delivery_at": "2026-04-27T18:00:00+04:00",
+    "status": "delivered",
+    "payment_method": "card",
+    "priority": "complaint_followup",
+    "items": [{"sku": "DIAPER-PAMP-S3", "qty": 2}]
+  },
+  {
+    "order_id": "MW-1004",
+    "customer_id": "C-004",
+    "country": "UAE",
+    "emirate": "Abu Dhabi",
+    "created_at": "2026-04-25T11:00:00+04:00",
+    "promised_delivery_at": "2026-04-26T20:00:00+04:00",
+    "status": "delivered",
+    "payment_method": "card",
+    "priority": "normal",
+    "items": [{"sku": "STROLLER-BB-X1", "qty": 1}]
+  },
+  {
+    "order_id": "MW-1005",
+    "customer_id": "C-005",
+    "country": "UAE",
+    "emirate": "Dubai",
+    "created_at": "2026-04-20T10:00:00+04:00",
+    "promised_delivery_at": "2026-04-20T22:00:00+04:00",
+    "status": "delivered",
+    "payment_method": "cod",
+    "priority": "normal",
+    "items": [{"sku": "CARSEAT-SAFE-9M", "qty": 1}]
+  },
+  {
+    "order_id": "MW-1006",
+    "customer_id": "C-006",
+    "country": "UAE",
+    "emirate": "Dubai",
+    "created_at": "2026-04-18T10:00:00+04:00",
+    "promised_delivery_at": "2026-04-18T22:00:00+04:00",
+    "status": "delivered",
+    "payment_method": "card",
+    "priority": "normal",
+    "items": [{"sku": "STROLLER-BB-X1", "qty": 1}]
+  },
+  {
+    "order_id": "MW-1007",
+    "customer_id": "C-007",
+    "country": "KSA",
+    "emirate": "Riyadh",
+    "created_at": "2026-04-05T12:00:00+03:00",
+    "promised_delivery_at": "2026-04-08T20:00:00+03:00",
+    "status": "delivered",
+    "payment_method": "mada",
+    "priority": "complaint_followup",
+    "items": [{"sku": "PUMP-MEDA-01", "qty": 1}]
+  },
+  {
+    "order_id": "MW-1008",
+    "customer_id": "C-008",
+    "country": "KSA",
+    "emirate": "Jeddah",
+    "created_at": "2026-04-19T11:00:00+03:00",
+    "promised_delivery_at": "2026-04-22T20:00:00+03:00",
+    "status": "delivered",
+    "payment_method": "tabby",
+    "priority": "normal",
+    "items": [{"sku": "STROLLER-BB-X1", "qty": 1}]
+  },
+  {
+    "order_id": "MW-1009",
+    "customer_id": "C-009",
+    "country": "UAE",
+    "emirate": "Dubai",
+    "created_at": "2026-04-18T11:00:00+04:00",
+    "promised_delivery_at": "2026-04-18T21:00:00+04:00",
+    "status": "delivered",
+    "payment_method": "card",
+    "priority": "normal",
+    "items": [{"sku": "STROLLER-BB-X1", "qty": 1}]
+  },
+  {
+    "order_id": "MW-1010",
+    "customer_id": "C-010",
+    "country": "UAE",
+    "emirate": "Dubai",
+    "created_at": "2026-04-27T12:00:00+04:00",
+    "promised_delivery_at": "2026-04-27T22:00:00+04:00",
+    "status": "cancelled",
+    "payment_method": "card",
+    "priority": "new_mom",
+    "items": [{"sku": "FORMULA-APT-1", "qty": 1}]
+  }
+]

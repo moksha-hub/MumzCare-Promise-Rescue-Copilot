@@ -1,0 +1,37 @@
+[
+  {
+    "order_id": "MW-1001",
+    "carrier": "DemoExpress",
+    "current_status": "out_for_delivery",
+    "last_scan_at": "2026-04-27T11:40:00+04:00",
+    "eta": null
+  },
+  {
+    "order_id": "MW-1002",
+    "carrier": "DemoExpress",
+    "current_status": "out_for_delivery",
+    "last_scan_at": "2026-04-27T18:10:00+04:00",
+    "eta": "2026-04-27T22:15:00+04:00"
+  },
+  {
+    "order_id": "MW-1003",
+    "carrier": "DemoExpress",
+    "current_status": "delivered",
+    "last_scan_at": "2026-04-27T17:55:00+04:00",
+    "eta": null
+  },
+  {
+    "order_id": "MW-1004",
+    "carrier": "DemoExpress",
+    "current_status": "delivered",
+    "last_scan_at": "2026-04-26T18:00:00+04:00",
+    "eta": null
+  },
+  {
+    "order_id": "MW-1010",
+    "carrier": "not_dispatched",
+    "current_status": "cancelled_before_dispatch",
+    "last_scan_at": null,
+    "eta": null
+  }
+]

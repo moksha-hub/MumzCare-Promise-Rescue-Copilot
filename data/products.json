@@ -1,0 +1,42 @@
+[
+  {
+    "sku": "FORMULA-APT-1",
+    "name_en": "Aptamil Stage 1 Baby Formula",
+    "name_ar": "حليب أبتاميل للرضع المرحلة الأولى",
+    "category": "formula",
+    "urgent_essential": true,
+    "hygiene_sensitive": true
+  },
+  {
+    "sku": "DIAPER-PAMP-S3",
+    "name_en": "Pampers Size 3 Diapers",
+    "name_ar": "حفاضات بامبرز مقاس 3",
+    "category": "diapers",
+    "urgent_essential": true,
+    "hygiene_sensitive": true
+  },
+  {
+    "sku": "STROLLER-BB-X1",
+    "name_en": "BabyBee Compact Stroller",
+    "name_ar": "عربة أطفال بيبي بي المدمجة",
+    "category": "stroller",
+    "urgent_essential": false,
+    "hygiene_sensitive": false
+  },
+  {
+    "sku": "PUMP-MEDA-01",
+    "name_en": "Medela Breast Pump",
+    "name_ar": "مضخة حليب ميديلا",
+    "category": "feeding",
+    "urgent_essential": true,
+    "hygiene_sensitive": true
+  },
+  {
+    "sku": "CARSEAT-SAFE-9M",
+    "name_en": "SafeRide Infant Car Seat",
+    "name_ar": "كرسي سيارة للأطفال سايف رايد",
+    "category": "car_seat",
+    "urgent_essential": true,
+    "hygiene_sensitive": false
+  }
+]
