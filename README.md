@@ -154,8 +154,8 @@ One honest residual risk: urgency calibration is still based on hand-written rul
 
 Tools used:
 
-- Codex/GPT-5.5 coding agent for pair-programming, repo edits, debugging, and documentation.
-- Spawned subagents for full-agent-loop review: product strategy, senior engineering review, eval design, Arabic/bilingual audit, UI/demo audit, and README/TRADEOFFS drafting.
+- Codex/GPT-5 coding agent for pair-programming, repo edits, debugging, documentation, and reviewer-style audit passes.
+- Agent-style review loops for product strategy, senior engineering review, eval design, Arabic/bilingual audit, UI/demo audit, and README/TRADEOFFS drafting.
 - Web research for official Mumzworld policy pages and public review signals.
 - Pydantic for schema validation.
 - scikit-learn `TfidfVectorizer` for lightweight local RAG.
@@ -165,10 +165,17 @@ Tools used:
 
 Resources used:
 
-- Official Mumzworld public pages for delivery, FAQ, returns, and contact policy grounding.
+- Official Mumzworld public pages for delivery, FAQ, returns, and contact policy grounding, re-checked on 2026-04-28.
 - Public customer-review signals for problem discovery only.
 - Synthetic order, tracking, product, and return fixtures for implementation and evals.
 - No retailer product-page scraping.
+
+Official source snapshot:
+
+- Shipping page: UAE same-day delivery for Dubai, Sharjah, and Abu Dhabi; KSA Yalla same-day and non-Yalla 3-5 days.
+- FAQ: return pickup timing is UAE 1-3 business days and KSA 2-5 business days; refunds include wallet, credit card, Mada, and COD-to-wallet behavior.
+- Returns policy / FAQ: eligible returns are tied to a 14-day window and product condition review.
+- Contact / footer pages: support and category context for the internal-agent workflow.
 
 How I used AI:
 
