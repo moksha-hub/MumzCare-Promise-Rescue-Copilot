@@ -29,6 +29,8 @@ For each support case, the copilot returns:
 
 The LLM is optional. The default path is deterministic and fully runnable without an API key. If `USE_LLM_DRAFTS=true` and `OPENROUTER_API_KEY` is set, OpenRouter can refine the replies without changing facts.
 
+Important distinction: the project was built and audited with AI coding assistance, documented below. The default runtime prototype does not call an LLM or paid API. That was an intentional scope choice so reviewers can run and evaluate the submission without keys, rate limits, or provider variability.
+
 ## Setup
 
 Windows PowerShell:
@@ -119,6 +121,17 @@ Hard rules:
 
 The product principle is promise safety: it is better to say "I do not know yet" than to invent a delivery time, refund approval, or policy exception.
 
+## Quality Guardrails
+
+The assignment calls out several failure modes. This prototype treats them as explicit guardrails:
+
+- Inventing facts not in the input: all operational facts come from `get_order`, `get_tracking`, `get_return`, and `get_product`; the final packet exposes `verified_facts` and `tool_trace`.
+- Hiding uncertainty: missing order IDs, unknown orders, missing carrier ETA, missing return records, and low-confidence cases populate `uncertainty_flags` and require human review.
+- Padding with generic claims: replies mention the verified order, product, status, payment method, or missing fact instead of generic apology-only text.
+- Literal Arabic translation: Arabic copy uses separate templates, Arabic product names, Arabic status/action/payment labels, and RTL UI rendering. Evals check for Arabic script, mojibake, and raw enum leakage.
+- Malformed JSON or empty-string fields: Pydantic validates the `DecisionPacket`; in-scope decisions require facts and citations, and list fields reject empty strings.
+- Confident out-of-scope answers: medical advice and policy-abuse requests return `out_of_scope`, refusal actions, blocked-promise notes, and human escalation.
+
 ## Tradeoffs
 
 Why this problem: I chose promise rescue because it is a real support pain point with concrete failure modes: broken delivery promises, missing items, delayed refunds, unclear return pickup, and unsafe agent replies. It is narrower and more testable than a full chatbot, but still valuable for customer trust and support operations.
@@ -162,6 +175,13 @@ Tools used:
 - Streamlit for the one-page demo UI.
 - Pytest and the custom eval runner for regression checks.
 - OpenRouter is supported as an optional reply-refinement path, but the default verified run does not require a key.
+
+Runtime model usage:
+
+- Default verified path: no external LLM call. Decisions, routing, RAG retrieval, validation, EN/AR templates, and evals run locally.
+- Optional path: OpenRouter can be enabled with `USE_LLM_DRAFTS=true` and `OPENROUTER_API_KEY`. It may rewrite `reply_en` and `reply_ar` for tone only after the structured packet is already valid.
+- Model configured for optional path: `google/gemini-2.5-flash-lite` by default through OpenRouter, configurable via `OPENROUTER_MODEL`.
+- Why no required runtime LLM: the Track A requirement is non-trivial AI engineering, not mandatory paid inference. This prototype satisfies that through tool use, RAG, structured output validation, multilingual handling, and evals beyond vibes while remaining reproducible without keys.
 
 Resources used:
 
