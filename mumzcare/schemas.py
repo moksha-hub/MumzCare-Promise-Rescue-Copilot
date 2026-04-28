@@ -58,12 +58,31 @@ class Citation(BaseModel):
     score: float = Field(ge=0.0, le=1.0)
 
 
+class ResolutionTask(BaseModel):
+    task_id: str = Field(min_length=1)
+    owner_team: str = Field(min_length=1)
+    action: RecommendedAction
+    priority: Urgency
+    problem_detected: str = Field(min_length=1)
+    why_this_team: str = Field(min_length=1)
+    next_steps: list[str] = Field(min_length=1)
+    customer_promise_boundary: str = Field(min_length=1)
+
+    @field_validator("next_steps")
+    @classmethod
+    def no_empty_steps(cls, values: list[str]) -> list[str]:
+        if any(not value.strip() for value in values):
+            raise ValueError("empty resolution steps are not allowed")
+        return values
+
+
 class DecisionPacket(BaseModel):
     input_language: Language
     case_type: CaseType
     sla_status: SLAStatus
     urgency: Urgency
     recommended_actions: list[RecommendedAction]
+    resolution_tasks: list[ResolutionTask]
     verified_facts: list[str]
     policy_citations: list[Citation]
     confidence: float = Field(ge=0.0, le=1.0)
@@ -90,6 +109,8 @@ class DecisionPacket(BaseModel):
             raise ValueError("low-confidence decisions must require human review")
         if case_value not in {CaseType.out_of_scope.value, CaseType.unknown.value} and not self.policy_citations:
             raise ValueError("in-scope decisions require at least one policy citation")
+        if self.recommended_actions and not self.resolution_tasks:
+            raise ValueError("recommended actions require resolution tasks")
         return self
 
 

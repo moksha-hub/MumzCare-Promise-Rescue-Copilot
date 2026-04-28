@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import timedelta
 
 from mumzcare.llm import maybe_refine_replies
-from mumzcare.schemas import CaseType, DecisionPacket, RecommendedAction, SLAStatus, Urgency
+from mumzcare.schemas import CaseType, DecisionPacket, RecommendedAction, ResolutionTask, SLAStatus, Urgency
 from mumzcare.tools import ORDER_RE, NOW, get_order, get_product, get_return, get_tracking, parse_dt, parse_order_id, search_policy
 
 
@@ -59,6 +59,14 @@ def analyze_case(message: str, order_id: str | None = None) -> DecisionPacket:
             sla_status=SLAStatus.unknown,
             urgency=Urgency.medium,
             recommended_actions=[RecommendedAction.ask_for_missing_info],
+            resolution_tasks=build_resolution_tasks(
+                CaseType.unknown,
+                [RecommendedAction.ask_for_missing_info],
+                Urgency.medium,
+                None,
+                ["Customer message is empty, so the copilot cannot classify the support intent."],
+                [],
+            ),
             verified_facts=[],
             policy_citations=[],
             confidence=0.4,
@@ -80,6 +88,14 @@ def analyze_case(message: str, order_id: str | None = None) -> DecisionPacket:
             sla_status=SLAStatus.not_applicable,
             urgency=Urgency.critical,
             recommended_actions=[RecommendedAction.refuse_medical_advice, RecommendedAction.human_escalation],
+            resolution_tasks=build_resolution_tasks(
+                CaseType.out_of_scope,
+                [RecommendedAction.refuse_medical_advice, RecommendedAction.human_escalation],
+                Urgency.critical,
+                order_id,
+                ["The message asks for medical or safety advice, which this support copilot cannot provide."],
+                ["Medical guidance was not provided."],
+            ),
             verified_facts=[],
             policy_citations=[],
             confidence=0.95,
@@ -103,6 +119,14 @@ def analyze_case(message: str, order_id: str | None = None) -> DecisionPacket:
             sla_status=SLAStatus.not_applicable,
             urgency=Urgency.low,
             recommended_actions=[RecommendedAction.deny_with_reason, RecommendedAction.human_escalation],
+            resolution_tasks=build_resolution_tasks(
+                CaseType.out_of_scope,
+                [RecommendedAction.deny_with_reason, RecommendedAction.human_escalation],
+                Urgency.low,
+                resolved_order_id,
+                ["The requested action would falsify operational status and cannot be performed by the copilot."],
+                ["Delivery status was not changed or represented as delivered without verified carrier evidence."],
+            ),
             verified_facts=facts,
             policy_citations=[],
             confidence=0.94,
@@ -123,6 +147,14 @@ def analyze_case(message: str, order_id: str | None = None) -> DecisionPacket:
             sla_status=SLAStatus.unknown,
             urgency=Urgency.medium,
             recommended_actions=[RecommendedAction.ask_for_missing_info],
+            resolution_tasks=build_resolution_tasks(
+                CaseType.unknown,
+                [RecommendedAction.ask_for_missing_info],
+                Urgency.medium,
+                None,
+                ["Order ID is missing, so order, tracking, return, and payment facts cannot be verified."],
+                [],
+            ),
             verified_facts=[],
             policy_citations=[],
             confidence=0.5,
@@ -143,6 +175,14 @@ def analyze_case(message: str, order_id: str | None = None) -> DecisionPacket:
             sla_status=SLAStatus.unknown,
             urgency=Urgency.medium,
             recommended_actions=[RecommendedAction.ask_for_missing_info],
+            resolution_tasks=build_resolution_tasks(
+                CaseType.unknown,
+                [RecommendedAction.ask_for_missing_info],
+                Urgency.medium,
+                resolved_order_id,
+                [f"Order {resolved_order_id} was not found in the synthetic order dataset."],
+                [],
+            ),
             verified_facts=[],
             policy_citations=[],
             confidence=0.45,
@@ -177,6 +217,7 @@ def analyze_case(message: str, order_id: str | None = None) -> DecisionPacket:
         or bool(blocked)
     )
     reply_en, reply_ar = draft_replies(case_type, sla_status, actions, order, tracking, returns, product, uncertainty, language)
+    resolution_tasks = build_resolution_tasks(case_type, actions, urgency, order["order_id"], uncertainty, blocked)
 
     packet = DecisionPacket(
         input_language=language,
@@ -184,6 +225,7 @@ def analyze_case(message: str, order_id: str | None = None) -> DecisionPacket:
         sla_status=sla_status,
         urgency=urgency,
         recommended_actions=actions,
+        resolution_tasks=resolution_tasks,
         verified_facts=facts,
         policy_citations=citations,
         confidence=confidence,
@@ -293,6 +335,164 @@ def choose_actions(case_type: CaseType, sla_status: SLAStatus, order: dict, retu
     if case_type == CaseType.stock_cancellation:
         return [RecommendedAction.stock_substitution, RecommendedAction.refund_original, RecommendedAction.human_escalation]
     return [RecommendedAction.ask_for_missing_info]
+
+
+def build_resolution_tasks(
+    case_type: CaseType,
+    actions: list[RecommendedAction],
+    urgency: Urgency,
+    order_id: str | None,
+    uncertainty: list[str],
+    blocked: list[str],
+) -> list[ResolutionTask]:
+    tasks: list[ResolutionTask] = []
+    suffix = order_id or "NO-ORDER"
+    for action in actions:
+        tasks.append(
+            ResolutionTask(
+                task_id=f"SIM-{suffix}-{action.value}".upper(),
+                owner_team=owner_team(action),
+                action=action,
+                priority=urgency,
+                problem_detected=problem_summary(case_type, order_id),
+                why_this_team=owner_reason(action),
+                next_steps=next_steps(action, order_id, uncertainty, blocked),
+                customer_promise_boundary=promise_boundary(action, uncertainty, blocked),
+            )
+        )
+    return tasks
+
+
+def problem_summary(case_type: CaseType, order_id: str | None) -> str:
+    target = f" for {order_id}" if order_id else ""
+    summaries = {
+        CaseType.late_urgent_delivery: "Delivery promise may be breached or at risk",
+        CaseType.delivered_not_received: "Order is marked delivered but customer reports non-receipt",
+        CaseType.damaged_or_wrong_item: "Customer reports damaged, defective, or wrong item",
+        CaseType.return_pickup_delay: "Return pickup may be delayed",
+        CaseType.refund_timing: "Customer is asking about refund timing or refund method",
+        CaseType.stock_cancellation: "Order was affected by stock cancellation or unavailable item",
+        CaseType.out_of_scope: "Request is outside safe support automation",
+        CaseType.unknown: "The copilot lacks enough verified information to classify the issue",
+    }
+    return summaries[case_type] + target
+
+
+def owner_team(action: RecommendedAction) -> str:
+    return {
+        RecommendedAction.courier_escalation: "Courier Ops",
+        RecommendedAction.investigate_missing_delivery: "Delivery Investigation",
+        RecommendedAction.exchange_or_replacement: "Returns & Replacement Desk",
+        RecommendedAction.pickup_reschedule: "Return Pickup Ops",
+        RecommendedAction.refund_original: "Payments & Refunds",
+        RecommendedAction.refund_wallet: "Wallet Refund Desk",
+        RecommendedAction.stock_substitution: "Catalog / Stock Recovery",
+        RecommendedAction.human_escalation: "Senior Customer Care",
+        RecommendedAction.deny_with_reason: "Trust & Policy Review",
+        RecommendedAction.ask_for_missing_info: "Customer Care Intake",
+        RecommendedAction.refuse_medical_advice: "Safety Escalation",
+        RecommendedAction.reassure_wait: "Customer Care",
+    }[action]
+
+
+def owner_reason(action: RecommendedAction) -> str:
+    return {
+        RecommendedAction.courier_escalation: "Courier Ops can request a verified carrier update or exception check.",
+        RecommendedAction.investigate_missing_delivery: "Delivery Investigation can compare carrier proof, address notes, and customer claim.",
+        RecommendedAction.exchange_or_replacement: "Returns & Replacement Desk can review evidence and stock before approval.",
+        RecommendedAction.pickup_reschedule: "Return Pickup Ops can reschedule or escalate the pickup partner.",
+        RecommendedAction.refund_original: "Payments & Refunds owns original-method refund handling.",
+        RecommendedAction.refund_wallet: "Wallet Refund Desk owns COD-to-wallet refund handling.",
+        RecommendedAction.stock_substitution: "Catalog / Stock Recovery can find approved substitutes for unavailable essentials.",
+        RecommendedAction.human_escalation: "Senior Customer Care should review high-risk or ambiguous cases before promises.",
+        RecommendedAction.deny_with_reason: "Trust & Policy Review should handle requests that would falsify operational facts.",
+        RecommendedAction.ask_for_missing_info: "Customer Care Intake must collect missing identifiers before any resolution.",
+        RecommendedAction.refuse_medical_advice: "Safety Escalation should redirect medical concerns to qualified care.",
+        RecommendedAction.reassure_wait: "Customer Care can give a grounded status update while staying inside policy.",
+    }[action]
+
+
+def next_steps(action: RecommendedAction, order_id: str | None, uncertainty: list[str], blocked: list[str]) -> list[str]:
+    target = order_id or "the customer"
+    steps = {
+        RecommendedAction.courier_escalation: [
+            f"Create courier escalation task for {target}.",
+            "Attach order status, last scan, promised delivery time, and missing ETA note.",
+            "Request a verified carrier update before sending any exact delivery time.",
+        ],
+        RecommendedAction.investigate_missing_delivery: [
+            f"Open missing-delivery investigation for {target}.",
+            "Check carrier proof, delivery scan, address notes, and customer claim.",
+            "Hold refund/replacement promise until investigation evidence is reviewed.",
+        ],
+        RecommendedAction.exchange_or_replacement: [
+            f"Create replacement/exchange review for {target}.",
+            "Request damage/wrong-item evidence if not already attached.",
+            "Check stock and eligibility before approving replacement.",
+        ],
+        RecommendedAction.pickup_reschedule: [
+            f"Create pickup reschedule task for {target}.",
+            "Attach pickup request timestamp and market-specific pickup window.",
+            "Escalate pickup partner if the window is breached.",
+        ],
+        RecommendedAction.refund_original: [
+            f"Create original-method refund review for {target}.",
+            "Attach payment method and return collection timestamp.",
+            "Confirm refund eligibility before promising completion date.",
+        ],
+        RecommendedAction.refund_wallet: [
+            f"Route COD refund to wallet flow for {target}.",
+            "Confirm collection/review status.",
+            "Explain wallet refund path without promising cash refund.",
+        ],
+        RecommendedAction.stock_substitution: [
+            f"Create stock recovery task for {target}.",
+            "Check approved substitutes for the same baby-essential need.",
+            "If no substitute is available, route refund handling.",
+        ],
+        RecommendedAction.human_escalation: [
+            f"Assign {target} to senior support review.",
+            "Review urgency, policy citations, and uncertainty flags.",
+            "Approve or edit the customer reply before sending.",
+        ],
+        RecommendedAction.deny_with_reason: [
+            "Do not change operational status without evidence.",
+            "Explain the policy-safe reason for refusal.",
+            "Offer the correct verified process instead.",
+        ],
+        RecommendedAction.ask_for_missing_info: [
+            "Ask customer for the missing order number or details.",
+            "Do not check unrelated order facts.",
+            "Resume analysis only after the identifier is available.",
+        ],
+        RecommendedAction.refuse_medical_advice: [
+            "Do not provide dosage, diagnosis, or treatment guidance.",
+            "Tell the customer to contact a doctor or emergency care if needed.",
+            "Handle any separate order issue only after safety guidance is clear.",
+        ],
+        RecommendedAction.reassure_wait: [
+            f"Send grounded status update for {target}.",
+            "Mention only verified ETA/window facts.",
+            "Monitor until SLA risk changes or customer provides new evidence.",
+        ],
+    }[action]
+    if uncertainty:
+        steps.append(f"Flag uncertainty: {uncertainty[0]}")
+    if blocked:
+        steps.append(f"Blocked unsafe promise: {blocked[0]}")
+    return steps
+
+
+def promise_boundary(action: RecommendedAction, uncertainty: list[str], blocked: list[str]) -> str:
+    if blocked:
+        return "Do not make the blocked promise until an authorized tool or owner team verifies it."
+    if uncertainty:
+        return "Explain what is known and what is still unverified; require human review before a firm promise."
+    if action in {RecommendedAction.refund_original, RecommendedAction.refund_wallet}:
+        return "Do not promise refund completion time beyond the verified payment-method window."
+    if action == RecommendedAction.reassure_wait:
+        return "Customer reply may reassure, but only using verified ETA/window facts."
+    return "Customer reply should describe next action, not final approval, unless a tool confirms approval."
 
 
 def build_facts(order: dict, tracking: dict | None, returns: dict | None, product: dict | None) -> list[str]:

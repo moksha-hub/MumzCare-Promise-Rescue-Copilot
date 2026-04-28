@@ -23,6 +23,7 @@ For each support case, the copilot returns:
 - `sla_status`: on track, at risk, breached, not applicable, or unknown
 - `urgency`: low, medium, high, or critical
 - `recommended_actions`: controlled enum actions such as courier escalation, pickup reschedule, refund wallet, replacement review, or human escalation
+- `resolution_tasks`: simulated internal company-side tasks with owner team, problem detected, next steps, and promise boundary
 - `verified_facts`: facts from order, tracking, return, and product tools
 - `policy_citations`: retrieved policy snippets with source section and score
 - `confidence`, `human_review_required`, `uncertainty_flags`, and `unsafe_promises_blocked`
@@ -102,6 +103,7 @@ The Streamlit app keeps the agent-facing decision simple:
 - Demo boundary: the app uses synthetic orders `MW-1001` through `MW-1010`; custom messages work against those orders, while real external order IDs return an explicit unknown-order response.
 - Input validation: blank customer messages are blocked before analysis so stale/default order facts are not shown as a real decision.
 - Order journey: known orders show a lifecycle table from order received, payment check, stock reservation, pick/pack, courier handoff, in-transit/out-for-delivery, delivery confirmation, and return/refund stages when available.
+- Company-side resolution: the app shows which internal owner should act next, such as Courier Ops, Delivery Investigation, Return Pickup Ops, Payments & Refunds, Stock Recovery, or Senior Customer Care.
 - Main answer: recommended actions plus the English/Arabic reply drafts.
 - Grounding: verified facts and the strongest policy citation.
 - Audit evidence: full citations, tool trace, and raw validated JSON are available in expanders.

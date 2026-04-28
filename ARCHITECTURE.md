@@ -29,6 +29,7 @@ flowchart LR
     policy["policy_docs.md<br/>section chunks<br/>source URL map"]
     engine["Decision engine<br/>classify case<br/>compute SLA / urgency<br/>compute confidence<br/>block unsafe promises"]
     clock(("Fixed eval clock<br/>2026-04-27 21:15<br/>Asia/Dubai"))
+    tasks["Resolution tasks<br/>owner team<br/>problem detected<br/>next steps<br/>promise boundary"]
     schema["Pydantic validation<br/>required EN / AR replies<br/>facts + citations for in-scope<br/>low confidence => human review<br/>no empty audit fields"]
     llm["Optional OpenRouter<br/>Gemma 4 31B free<br/>tone-only rewrite<br/>cannot change facts<br/>re-validated or discarded"]
     output["Agent output<br/>verified_facts<br/>policy_citations<br/>tool_trace<br/>uncertainty_flags<br/>reply_en + reply_ar"]
@@ -39,6 +40,8 @@ flowchart LR
     tools --> engine
     rag --> engine
     clock --> engine
+    engine --> tasks
+    tasks --> schema
     engine --> schema
     schema -. optional .-> llm
     schema --> output
@@ -89,6 +92,7 @@ Customer message + order_id
   -> compute uncertainty flags
   -> compute confidence score
   -> block unsafe ETA/refund/status promises
+  -> create internal resolution tasks
   -> draft English and Arabic replies
   -> validate DecisionPacket with Pydantic
   -> optional LLM wording refinement
@@ -145,6 +149,7 @@ Validation failures are raised, not silently corrected.
 
 The output is designed to be reviewable:
 
+- `resolution_tasks` shows the internal owner team, detected problem, next steps, and promise boundary.
 - `verified_facts` shows the operational facts used.
 - `policy_citations` shows which policy sections were retrieved and their scores.
 - `tool_trace` shows which tools ran: order, tracking, return, product, and policy search.
@@ -187,6 +192,7 @@ Every successful analysis returns a `DecisionPacket`:
 - `input_language`: `en`, `ar`, or `mixed`
 - `case_type`, `sla_status`, `urgency`
 - `recommended_actions`
+- `resolution_tasks` with task ID, owner team, next steps, and promise boundary
 - `verified_facts`
 - `policy_citations` with section, score, and source URL
 - `confidence`

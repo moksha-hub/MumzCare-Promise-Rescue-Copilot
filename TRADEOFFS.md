@@ -45,6 +45,8 @@ The boundary is:
 
 The output intentionally includes more than a final reply. `verified_facts`, `policy_citations`, `tool_trace`, `confidence`, `uncertainty_flags`, and `unsafe_promises_blocked` form an audit trail. This makes the prototype easier to grade and closer to a real internal support tool, where a supervisor needs to know why a recommendation was made.
 
+I added `resolution_tasks` so the prototype does not stop at "what to say." It also shows the simulated company-side owner and next steps, such as Courier Ops requesting a verified carrier update, Delivery Investigation checking proof of delivery, or Payments & Refunds reviewing the payment-method path. These are mock tasks, not live API calls, because the assignment forbids relying on real Mumzworld internals.
+
 I also chose strict schema validation because several Track A failure modes are structural: malformed JSON, empty fields, unsupported claims, and confident out-of-scope answers. Pydantic makes those failures explicit instead of relying on prompt wording.
 
 The Pydantic tradeoff is that the system may reject or escalate more cases than a looser prompt-only prototype. I accepted that because explicit failures are easier to debug and safer than silently passing malformed or ungrounded output.

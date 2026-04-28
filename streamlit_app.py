@@ -76,6 +76,11 @@ if st.button("Analyze", type="primary"):
     if data["unsafe_promises_blocked"]:
         st.error("Unsafe promise blocked: " + "; ".join(data["unsafe_promises_blocked"]))
 
+    if data["resolution_tasks"]:
+        first_task = data["resolution_tasks"][0]
+        st.subheader("Detected Problem")
+        st.write(first_task["problem_detected"])
+
     left, right = st.columns(2)
     with left:
         resolved_order_id = clean_order_id or parse_order_id(clean_message)
@@ -103,6 +108,16 @@ if st.button("Analyze", type="primary"):
         with st.expander("Tool trace"):
             st.code("\n".join(data["tool_trace"]))
     with right:
+        st.subheader("Company-Side Resolution Tasks")
+        for task in data["resolution_tasks"]:
+            st.markdown(f"**{task['task_id']}** - {task['owner_team']} (`{task['action']}`)")
+            st.write(f"Problem: {task['problem_detected']}")
+            st.write(f"Why this team: {task['why_this_team']}")
+            st.write(f"Promise boundary: {task['customer_promise_boundary']}")
+            with st.expander(f"Next steps for {task['owner_team']}"):
+                for step in task["next_steps"]:
+                    st.write(f"- {step}")
+
         st.subheader("Recommended Actions")
         for action in data["recommended_actions"]:
             st.write(f"- {ACTION_LABELS.get(action, action.replace('_', ' ').title())} (`{action}`)")

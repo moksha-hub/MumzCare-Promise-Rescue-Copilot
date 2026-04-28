@@ -19,6 +19,8 @@ def test_late_formula_blocks_unsupported_eta() -> None:
     assert packet.case_type == CaseType.late_urgent_delivery
     assert RecommendedAction.courier_escalation in packet.recommended_actions
     assert packet.unsafe_promises_blocked
+    assert packet.resolution_tasks
+    assert packet.resolution_tasks[0].owner_team == "Courier Ops"
 
 
 def test_optional_openrouter_defaults_and_skips_unsafe_promises(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -101,6 +103,7 @@ def test_decision_packet_rejects_ungrounded_in_scope_case() -> None:
             sla_status=SLAStatus.breached,
             urgency="high",
             recommended_actions=[RecommendedAction.courier_escalation],
+            resolution_tasks=[],
             verified_facts=[],
             policy_citations=[],
             confidence=0.9,
