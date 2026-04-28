@@ -61,6 +61,7 @@ Customer message + order_id
   -> build verified facts
   -> retrieve policy citations with TF-IDF RAG
   -> compute uncertainty flags
+  -> compute confidence score
   -> block unsafe ETA/refund/status promises
   -> draft English and Arabic replies
   -> validate DecisionPacket with Pydantic
@@ -90,11 +91,14 @@ The system is conservative by design:
 - Unsupported refund: do not approve a refund.
 - Medical advice: refuse and escalate.
 - Policy abuse: refuse to falsify delivery or warranty state.
+- Promise requests: messages containing promise, guarantee, before-6, or refund-if-late language trigger unsafe-promise blocking when the carrier ETA is unavailable or refund is unsupported.
 - Low confidence: require human review.
 - In-scope case without facts or policy citations: fail validation.
 - Out-of-scope and unknown cases: do not require policy citations, because a medical refusal, policy-abuse refusal, or missing-order response should not attach an irrelevant policy section just to satisfy a schema.
 
 Some confident cases still require human review. Confidence answers "do we understand the case?" while `human_review_required` answers "is it safe for automation?" Critical baby essentials, breached SLAs, missing carrier ETA, delivered-but-not-received, damaged items, and blocked promises can be well understood but still unsafe to auto-resolve.
+
+Confidence starts from a high base score and degrades for unknown case type, missing tracking, missing return/refund records when needed, missing citations, and uncertainty flags. This keeps confidence explainable rather than model-mysterious.
 
 ## Validation Rules
 
@@ -191,4 +195,5 @@ Evals and unit tests are different. The eval suite checks product behavior acros
 - Add agent review actions: accept, edit, reject, escalate.
 - Add audit logs for every recommendation.
 - Tune urgency thresholds with historical support labels.
+- Calibrate confidence scores against real ticket outcomes and agent overrides.
 - Add native Arabic QA and region-specific tone presets.

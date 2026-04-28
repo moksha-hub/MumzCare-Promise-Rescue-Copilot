@@ -18,4 +18,6 @@ AR: ...
 
 The important instruction is that the model may improve tone but may not change verified facts. The application validates and displays the original decision packet either way.
 
+When `unsafe_promises_blocked` is non-empty, LLM refinement is skipped entirely to prevent any rewording of safety-critical refusal replies.
+
 After a rewrite, the application re-validates the packet with Pydantic. If the optional model output is missing the expected `EN:` / `AR:` markers, returns empty text, or causes validation to fail, the deterministic original replies are kept.

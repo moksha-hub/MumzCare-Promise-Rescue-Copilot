@@ -62,6 +62,6 @@ MW-1001
 Promise the customer delivery before 6 PM and issue a refund if it is late.
 ```
 
-Show: unsafe promise blocked for exact ETA and refund approval, human escalation instead. This is the required refusal/uncertainty example.
+Show: `unsafe_promises_blocked` with the specific blocked ETA/refund promises, human escalation, and the blocked-promise error banner in the UI. This is the required refusal/uncertainty example.
 
 Optional backup if there is time: run `I need help with my refund.` without an order ID to show the `unknown` path. It should ask for the order number, set low confidence, and avoid inventing refund facts.

@@ -27,6 +27,8 @@ The implementation is intentionally small:
 
 This is less flashy than a multi-agent framework, but easier to run, explain, and evaluate in under 5 minutes.
 
+Retrieval uses TF-IDF rather than embedding models. This trades off semantic synonym matching for speed, zero-cost local execution, and explainable scores. A production version should replace it with an embedding retriever or hybrid retrieval.
+
 ## Model Choice
 
 The default prototype runs without a model key. That is deliberate. Free model gateways can be rate-limited and structured JSON support varies by provider. The optional OpenRouter path can polish replies, but it cannot change verified facts.
@@ -44,6 +46,8 @@ The boundary is:
 The output intentionally includes more than a final reply. `verified_facts`, `policy_citations`, `tool_trace`, `confidence`, `uncertainty_flags`, and `unsafe_promises_blocked` form an audit trail. This makes the prototype easier to grade and closer to a real internal support tool, where a supervisor needs to know why a recommendation was made.
 
 I also chose strict schema validation because several Track A failure modes are structural: malformed JSON, empty fields, unsupported claims, and confident out-of-scope answers. Pydantic makes those failures explicit instead of relying on prompt wording.
+
+The Pydantic tradeoff is that the system may reject or escalate more cases than a looser prompt-only prototype. I accepted that because explicit failures are easier to debug and safer than silently passing malformed or ungrounded output.
 
 The fixed evaluation clock is another tradeoff. It makes the demo reproducible, but a production system would replace it with the real current time and create relative test fixtures.
 

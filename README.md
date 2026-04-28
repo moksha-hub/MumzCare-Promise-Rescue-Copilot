@@ -18,6 +18,7 @@ I chose this over a gift finder, PDP generator, review summarizer, or broad chat
 
 For each support case, the copilot returns:
 
+- `input_language`: `en`, `ar`, or `mixed`
 - `case_type`: late delivery, delivered-not-received, damaged/wrong item, return pickup delay, refund timing, stock cancellation, unknown, or out of scope
 - `sla_status`: on track, at risk, breached, not applicable, or unknown
 - `urgency`: low, medium, high, or critical
@@ -26,6 +27,7 @@ For each support case, the copilot returns:
 - `policy_citations`: retrieved policy snippets with source section and score
 - `confidence`, `human_review_required`, `uncertainty_flags`, and `unsafe_promises_blocked`
 - `reply_en` and `reply_ar`
+- `tool_trace`: ordered list of tool and safety-check invocations used to produce the decision
 
 The LLM is optional. The default path is deterministic and fully runnable without an API key. If `USE_LLM_DRAFTS=true` and `OPENROUTER_API_KEY` is set, OpenRouter can refine the replies without changing facts.
 
