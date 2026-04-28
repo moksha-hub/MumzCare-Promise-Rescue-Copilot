@@ -17,7 +17,33 @@ The project was built and audited with AI coding assistance, but the default run
 
 ## Diagram
 
-The editable draw.io source is `diagrams/mumzcare_architecture.drawio`. It shows the same flow as this document: input, safety gates, tool lookups, policy retrieval, decision logic, validation, optional wording refinement, and agent-facing output.
+Paste this Mermaid source into diagrams.net / draw.io with `Arrange -> Insert -> Advanced -> Mermaid`, then export or screenshot it for the README if needed.
+
+```mermaid
+flowchart LR
+    input["Customer message + order ID<br/>EN / AR / mixed"]
+    safety["Safety gates<br/>medical refusal<br/>policy-abuse refusal<br/>missing / unknown order"]
+    tools["Tool lookups<br/>get_order<br/>get_tracking<br/>get_return<br/>get_product"]
+    data[("Synthetic backend<br/>orders.json<br/>tracking_events.json<br/>returns.json<br/>products.json")]
+    rag["Policy RAG<br/>split ## sections<br/>TF-IDF unigram / bigram<br/>top citations + scores"]
+    policy["policy_docs.md<br/>section chunks<br/>source URL map"]
+    engine["Decision engine<br/>classify case<br/>compute SLA / urgency<br/>compute confidence<br/>block unsafe promises"]
+    clock(("Fixed eval clock<br/>2026-04-27 21:15<br/>Asia/Dubai"))
+    schema["Pydantic validation<br/>required EN / AR replies<br/>facts + citations for in-scope<br/>low confidence => human review<br/>no empty audit fields"]
+    llm["Optional OpenRouter<br/>tone-only rewrite<br/>cannot change facts<br/>re-validated or discarded"]
+    output["Agent output<br/>verified_facts<br/>policy_citations<br/>tool_trace<br/>uncertainty_flags<br/>reply_en + reply_ar"]
+
+    input --> safety --> tools --> rag
+    tools --> data
+    rag --> policy
+    tools --> engine
+    rag --> engine
+    clock --> engine
+    engine --> schema
+    schema -. optional .-> llm
+    schema --> output
+    llm -. valid rewrite .-> output
+```
 
 ## Data Sources
 

@@ -90,7 +90,7 @@ Key design choice: the model is not the source of operational truth. Order facts
 
 For a fuller explanation of each component and workflow, see `ARCHITECTURE.md`.
 
-Editable architecture diagram: `diagrams/mumzcare_architecture.drawio`.
+Architecture diagram source is embedded in `ARCHITECTURE.md` as Mermaid. To turn it into a draw.io image, open diagrams.net, choose `Arrange -> Insert -> Advanced -> Mermaid`, paste the block, then export or screenshot it.
 
 Deterministic timing note: `mumzcare/tools.py` fixes `NOW` at `2026-04-27 21:15` in the `Asia/Dubai` timezone. That is deliberate for this take-home so SLA, return-pickup, and refund-window evals are reproducible on any reviewer machine.
 
