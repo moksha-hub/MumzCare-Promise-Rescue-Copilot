@@ -8,6 +8,17 @@ MumzCare Promise Rescue Copilot is an internal support/ops prototype for Mumzwor
 
 The product thesis is simple: Mumzworld already promises speed. The high-leverage AI problem is recovering trust when that promise breaks.
 
+## Who It Is For
+
+The primary user is a Mumzworld support or operations agent, not the end customer. The app is not trying to be a customer order tracker or a translation tool. It is a decision copilot for the moment when a ticket is messy and risky:
+
+1. detect the real post-order problem,
+2. verify what the company actually knows from order, tracking, return, product, and policy tools,
+3. assign the right internal owner and next steps, and
+4. draft a safe English/Arabic customer reply without inventing an ETA, refund, or replacement promise.
+
+That is why the UI puts the company-side resolution workspace first and keeps the customer-facing reply in a separate draft tab.
+
 ## Why This Pain Point
 
 Mumzworld's public experience depends on fast delivery, easy returns, refund clarity, and support trust. Public policy pages describe same-day or near-term delivery promises, return pickup windows, and refund timing by payment method. Public reviews show that when something goes wrong, the painful part is often not only the delay; it is vague recovery, unclear refund timing, or a reply that does not match the customer's actual situation.
@@ -97,16 +108,16 @@ Deterministic timing note: `mumzcare/tools.py` fixes `NOW` at `2026-04-27 21:15`
 
 ## Demo Surface
 
-The Streamlit app keeps the agent-facing decision simple:
+The Streamlit app is intentionally an internal support-agent workspace, not a customer portal. The customer reply is only one tab; the primary screen is the company-side resolution workflow.
 
-- Top line: case type, SLA status, urgency, confidence, detected input language.
+- Operator pathway: detect issue, verify facts, assign owner, then draft safe EN/AR replies.
+- Triage summary: detected problem, case type, SLA, urgency, confidence, and input language.
 - Demo boundary: the app uses synthetic orders `MW-1001` through `MW-1010`; custom messages work against those orders, while real external order IDs return an explicit unknown-order response.
 - Input validation: blank customer messages are blocked before analysis so stale/default order facts are not shown as a real decision.
-- Order journey: known orders show a lifecycle table from order received, payment check, stock reservation, pick/pack, courier handoff, in-transit/out-for-delivery, delivery confirmation, and return/refund stages when available.
-- Company-side resolution: the app shows which internal owner should act next, such as Courier Ops, Delivery Investigation, Return Pickup Ops, Payments & Refunds, Stock Recovery, or Senior Customer Care.
-- Main answer: recommended actions plus the English/Arabic reply drafts.
-- Grounding: verified facts and the strongest policy citation.
-- Audit evidence: full citations, tool trace, and raw validated JSON are available in expanders.
+- Resolution workspace: internal task cards show owner team, why that owner, next steps, and promise boundary.
+- Evidence and journey: known orders show lifecycle stages from order received through courier handoff, delivery confirmation, and return/refund stages when available.
+- Customer reply draft: English and Arabic customer-facing replies are separated from internal operations details.
+- Raw audit JSON: full structured output is still available for reviewer inspection.
 
 This is intentional. A support agent should not have to read a debug dump, but a reviewer can still inspect how the answer was grounded. `tool_trace` is an audit artifact: it shows which lookup tools were actually called before the recommendation was produced.
 

@@ -4,6 +4,8 @@
 
 I chose MumzCare Promise Rescue Copilot because it sits at the exact point where a parent can lose trust: a promised delivery, return, refund, or replacement becomes uncertain. This is more valuable than a generic support chatbot because the system must reason about policy, order facts, payment method, timing, urgency, and safe communication.
 
+The chosen user is the internal support or operations agent. I deliberately did not build a customer-facing status page because the higher-risk failure is inside the company workflow: the wrong team is routed, the wrong promise is made, or the reply is sent before the facts are verified.
+
 Rejected ideas:
 
 - Gift finder: useful but common and less urgent.

@@ -4,6 +4,8 @@
 
 MumzCare takes a customer message plus an order ID, verifies operational facts through tools, retrieves the relevant policy section, applies safety and uncertainty rules, validates a structured decision packet, and returns English/Arabic replies for a support agent.
 
+The primary user is the internal support or operations agent. The customer-facing reply is an output artifact, not the main product surface. The product solves the company-side decision problem: identify the issue, verify the evidence, route work to the right owner, block unsafe promises, and then provide safe bilingual copy.
+
 ## Why The Design Is Simple
 
 The assignment rewards a working, explainable AI engineering prototype more than a large framework. This project uses a deterministic core and optional model refinement:
@@ -183,7 +185,15 @@ Known limitation: TF-IDF is weaker than embeddings for semantic synonyms. A prod
 
 The CLI writes UTF-8 JSON directly so Arabic text works on Windows terminals.
 
-The UI adds two demo-oriented protections around the engine: it blocks blank messages before analysis, and it shows an order journey table for known synthetic orders so reviewers can inspect fulfillment state beyond the final support classification.
+The UI is designed for one primary user: a support or operations agent. It separates internal resolution from customer-facing copy with tabs:
+
+- Operator pathway: detect issue, verify facts, assign owner, and draft safe EN/AR replies.
+- Resolution workspace: detected problem, owner team, task ID, next steps, and promise boundary.
+- Evidence and journey: verified facts, policy citations, tool trace, and order lifecycle.
+- Customer reply draft: English and Arabic replies only.
+- Raw audit JSON: the validated packet for reviewers.
+
+It also blocks blank messages before analysis and shows an order journey for known synthetic orders so reviewers can inspect fulfillment state beyond the final support classification.
 
 ## Output Shape
 
