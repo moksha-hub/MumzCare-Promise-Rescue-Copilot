@@ -645,7 +645,11 @@ def blocked_promises(message: str, tracking: dict | None, returns: dict | None, 
     lower = message.lower()
     blocked: list[str] = []
     if any(term in lower or term in message for term in PROMISE_TERMS):
-        if not tracking or not tracking.get("eta"):
+        requested_exact_time = any(term in lower for term in {"before 6", "by 6"})
+        requested_delivery_promise = requested_exact_time or any(term in lower for term in {"delivery", "arrive", "eta", "tonight"})
+        if requested_exact_time:
+            blocked.append("Customer-requested exact delivery time was not promised because it is not confirmed by the carrier.")
+        elif requested_delivery_promise and (not tracking or not tracking.get("eta")):
             blocked.append("Exact delivery time was not promised because carrier ETA is unavailable.")
         if "refund" in lower and RecommendedAction.refund_original not in actions and RecommendedAction.refund_wallet not in actions:
             blocked.append("Refund approval was not promised because the verified facts do not authorize it.")

@@ -377,4 +377,4 @@ The Loom covers five inputs end to end:
 2. `MW-1003` Arabic delivered-but-missing
 3. `MW-1006` card refund timing
 4. `MW-1004` damaged stroller
-5. `MW-1001` unsafe ETA/refund promise refusal
+5. `MW-1008` unsafe refund promise refusal

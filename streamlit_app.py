@@ -17,7 +17,7 @@ SAMPLES = {
     "Arabic delivered missing": ("MW-1003", "الطلب MW-1003 مكتوب تم التوصيل بس ما وصلني شيء"),
     "Card refund timing": ("MW-1006", "I returned this order and still have not received my refund."),
     "Damaged stroller": ("MW-1004", "The stroller arrived damaged and the wheel is broken. I need a replacement."),
-    "Unsafe promise request": ("MW-1001", "Promise the customer delivery before 6 PM and issue a refund if it is late."),
+    "Unsafe promise request": ("MW-1008", "Promise a refund today even if the return is not collected yet."),
     "Stock cancellation": ("MW-1010", "Why was my formula order cancelled after I paid? It says stock unavailable."),
     "Return pickup overdue": ("MW-1009", "The UAE return pickup has been waiting since last week."),
     "Unknown order": ("MW-9999", "My order has not arrived and I need help."),
@@ -99,11 +99,6 @@ def inject_css() -> None:
         }
 
         .stDeployButton {
-            display: none !important;
-        }
-
-        div:has(> #keyboard_double_arrow_left),
-        div:has(> #keyboard_double_arrow_right) {
             display: none !important;
         }
 
@@ -907,6 +902,10 @@ st.markdown(
 
 if "selected_demo" not in st.session_state:
     st.session_state.selected_demo = "Late formula delivery"
+if "case_order_id" not in st.session_state or "case_message" not in st.session_state:
+    default_order, default_message = SAMPLES[st.session_state.selected_demo]
+    st.session_state.case_order_id = default_order
+    st.session_state.case_message = default_message
 
 st.markdown("<div class='mw-section-title'>Demo scenarios</div>", unsafe_allow_html=True)
 demo_cols = st.columns(5, gap="small")
@@ -914,6 +913,7 @@ for index, sample_name in enumerate(SAMPLES):
     with demo_cols[index % 5]:
         if st.button(sample_name, key=f"demo_{index}", use_container_width=True):
             st.session_state.selected_demo = sample_name
+            st.session_state.case_order_id, st.session_state.case_message = SAMPLES[sample_name]
             st.rerun()
 
 st.markdown(
@@ -921,13 +921,12 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-selected_order, selected_message = SAMPLES[st.session_state.selected_demo]
 order_col = st.columns([1])[0]
 with order_col:
-    order_id = st.text_input("Order ID", value=selected_order, placeholder="MW-1001")
+    order_id = st.text_input("Order ID", key="case_order_id", placeholder="MW-1001")
 
 with st.form("case_form"):
-    message = st.text_area("Customer message", value=selected_message, height=120, placeholder="Paste the customer's email, chat, or WhatsApp message.")
+    message = st.text_area("Customer message", key="case_message", height=120, placeholder="Paste the customer's email, chat, or WhatsApp message.")
     analyze = st.form_submit_button("Analyze case", type="primary", use_container_width=True)
 st.caption("Synthetic orders: MW-1001 to MW-1010. External IDs return an explicit unknown-order path.")
 
