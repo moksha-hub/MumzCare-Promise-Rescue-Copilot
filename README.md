@@ -80,38 +80,85 @@ For each case, MumzCare returns a validated `DecisionPacket`:
 
 ## Setup And Run
 
-The project runs without paid keys.
+The project runs without paid keys. First start the Streamlit app; run evals and CLI checks separately after setup.
+
+### 1. Start The Application
 
 Windows PowerShell:
 
-```bash
+```powershell
+git clone https://github.com/moksha-hub/MumzCare-Promise-Rescue-Copilot.git
+cd MumzCare-Promise-Rescue-Copilot
 python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-python -m evals.run_evals
-python -m mumzcare.cli analyze --order-id MW-1001 --message "My baby formula was promised today and tracking has not moved."
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
 streamlit run streamlit_app.py
+```
+
+Open:
+
+```text
+http://localhost:8501
 ```
 
 macOS / Linux:
 
 ```bash
-python -m venv .venv
+git clone https://github.com/moksha-hub/MumzCare-Promise-Rescue-Copilot.git
+cd MumzCare-Promise-Rescue-Copilot
+python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
-python -m evals.run_evals
-python -m mumzcare.cli analyze --order-id MW-1001 --message "My baby formula was promised today and tracking has not moved."
+python -m pip install -r requirements.txt
 streamlit run streamlit_app.py
+```
+
+Open:
+
+```text
+http://localhost:8501
+```
+
+### 2. Test And Verify
+
+Run these after setup if you want to verify the submission behavior.
+
+Windows PowerShell:
+
+```powershell
+cd MumzCare-Promise-Rescue-Copilot
+.\.venv\Scripts\Activate.ps1
+python -m evals.run_evals
+python -m pytest tests/ -q
+python -m mumzcare.cli analyze --order-id MW-1001 --message "My baby formula was promised today and tracking has not moved."
+```
+
+macOS / Linux:
+
+```bash
+cd MumzCare-Promise-Rescue-Copilot
+source .venv/bin/activate
+python -m evals.run_evals
+python -m pytest tests/ -q
+python -m mumzcare.cli analyze --order-id MW-1001 --message "My baby formula was promised today and tracking has not moved."
 ```
 
 Optional OpenRouter use:
 
-```bash
-cp .env.example .env          # Windows: copy .env.example .env
-# Set OPENROUTER_API_KEY=your_key
-# Optional: USE_LLM_DRAFTS=true for reply tone refinement
-# Optional: USE_LLM_MEMORY=true for one-sentence semantic memory reasoning
+Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+notepad .env
 ```
+
+macOS / Linux:
+
+```bash
+cp .env.example .env
+nano .env
+```
+
+In `.env`, set `OPENROUTER_API_KEY=your_key`. Optionally set `USE_LLM_DRAFTS=true` for reply tone refinement or `USE_LLM_MEMORY=true` for one-sentence semantic memory reasoning.
 
 The default optional model is `poolside/laguna-xs.2:free`, configurable through `OPENROUTER_MODEL`.
 
