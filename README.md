@@ -95,11 +95,13 @@ python -m pip install -r requirements.txt
 streamlit run streamlit_app.py
 ```
 
-Open:
+Open the local URL printed by Streamlit. It is usually:
 
 ```text
 http://localhost:8501
 ```
+
+If another Streamlit app is already using port `8501`, Streamlit may open on `http://localhost:8502` or the next free port. Use the URL shown in your terminal.
 
 macOS / Linux:
 
@@ -112,11 +114,13 @@ python -m pip install -r requirements.txt
 streamlit run streamlit_app.py
 ```
 
-Open:
+Open the local URL printed by Streamlit. It is usually:
 
 ```text
 http://localhost:8501
 ```
+
+If another Streamlit app is already using port `8501`, Streamlit may open on `http://localhost:8502` or the next free port. Use the URL shown in your terminal.
 
 ### 2. Test And Verify
 
