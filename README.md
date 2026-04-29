@@ -323,6 +323,18 @@ AI assistance used during development:
 - AI-assisted review passes challenged problem framing, Arabic quality, UI clarity, eval coverage, and documentation completeness.
 - I kept deterministic tools, schema validation, and evals as the source of truth rather than trusting generated prose.
 
+What worked:
+
+- AI assistance was strongest for fast scaffolding, edge-case brainstorming, README review, eval-case expansion, and UI cleanup.
+- Deterministic evals worked better than model-graded evals because every reviewer can reproduce the same scores.
+- Keeping OpenRouter optional made the project easier to run and avoided rate-limit/provider variability during grading.
+
+What did not work:
+
+- Early broad support-chatbot framing was too vague, so I narrowed it to promise rescue plus outcome-aware Ops Memory.
+- Letting the LLM own decisions would have made grounding weaker, so facts, routing, citations, and blocked promises stayed in code.
+- Literal Arabic translation was not acceptable, so Arabic replies use separate templates and static quality checks.
+
 Where I overruled AI suggestions:
 
 - kept the scope focused instead of building a broad chatbot
