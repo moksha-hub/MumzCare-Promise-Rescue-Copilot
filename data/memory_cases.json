@@ -1,0 +1,183 @@
+[
+  {
+    "memory_id": "MEM-001",
+    "title": "Sharjah delivered scan disputed, photo proof showed wrong door",
+    "case_type": "delivered_not_received",
+    "courier": "DemoExpress",
+    "market": "UAE",
+    "zone": "Sharjah",
+    "product_category": "diapers",
+    "failure_signature": [
+      "delivered scan disputed by customer",
+      "proof of delivery photo missing or wrong door",
+      "customer says nothing arrived",
+      "delivery investigation required before replacement"
+    ],
+    "prior_action": "Opened delivery investigation and requested proof-of-delivery photo before promising refund.",
+    "resolution_outcome": "resolved",
+    "outcome_signal": {
+      "repeat_contact_within_72h": false,
+      "resolution_hours": 6.5,
+      "csat": 5,
+      "refund_completed": false,
+      "delivery_confirmed": true
+    },
+    "lesson": "For delivered-but-not-received disputes, proof-of-delivery review resolved the case faster than promising replacement first.",
+    "recommended_playbook": [
+      "Request proof-of-delivery evidence from courier ops.",
+      "Compare scan address, photo, and customer address before approving replacement.",
+      "Send customer a grounded investigation update without blaming the customer."
+    ]
+  },
+  {
+    "memory_id": "MEM-002",
+    "title": "Weekend formula delivery with stale scan needed courier manager review",
+    "case_type": "late_urgent_delivery",
+    "courier": "GulfShip",
+    "market": "KSA",
+    "zone": "Jeddah",
+    "product_category": "formula",
+    "failure_signature": [
+      "urgent baby formula",
+      "promised delivery breached",
+      "last scan stale",
+      "carrier ETA unavailable",
+      "weekend staffing gap"
+    ],
+    "prior_action": "Escalated only to standard courier queue.",
+    "resolution_outcome": "re_escalated",
+    "outcome_signal": {
+      "repeat_contact_within_72h": true,
+      "resolution_hours": 48,
+      "csat": 2,
+      "refund_completed": false,
+      "delivery_confirmed": true
+    },
+    "lesson": "Standard courier escalation was too slow for urgent formula; manager review plus substitute path worked after re-escalation.",
+    "recommended_playbook": [
+      "Escalate to courier manager instead of standard queue for urgent formula with stale scan.",
+      "Prepare approved substitute or refund path if no verified scan update arrives.",
+      "Do not promise an exact ETA until the carrier confirms it."
+    ]
+  },
+  {
+    "memory_id": "MEM-003",
+    "title": "Dubai formula cancellation after payment needed substitute-first recovery",
+    "case_type": "stock_cancellation",
+    "courier": "not_dispatched",
+    "market": "UAE",
+    "zone": "Dubai",
+    "product_category": "formula",
+    "failure_signature": [
+      "paid order cancelled before dispatch",
+      "stock reservation failed",
+      "urgent baby essential",
+      "customer asks why item became unavailable"
+    ],
+    "prior_action": "Offered substitute SKU first, then original payment refund if substitute was rejected.",
+    "resolution_outcome": "resolved",
+    "outcome_signal": {
+      "repeat_contact_within_72h": false,
+      "resolution_hours": 3,
+      "csat": 4,
+      "refund_completed": true,
+      "delivery_confirmed": false
+    },
+    "lesson": "For urgent formula stock cancellation, substitute-first recovery reduced repeat contacts compared with refund-only messaging.",
+    "recommended_playbook": [
+      "Check approved substitute SKU for the same baby-essential need.",
+      "Explain stock cancellation without blaming the customer.",
+      "Offer original-method refund path if no substitute is accepted."
+    ]
+  },
+  {
+    "memory_id": "MEM-004",
+    "title": "Card refund still within window was resolved by precise payment-rail explanation",
+    "case_type": "refund_timing",
+    "courier": "DemoExpress",
+    "market": "UAE",
+    "zone": "Dubai",
+    "product_category": "stroller",
+    "failure_signature": [
+      "return collected",
+      "card refund pending",
+      "refund still inside policy window",
+      "customer confused by refund timing"
+    ],
+    "prior_action": "Explained the card refund window and set monitoring trigger instead of escalating.",
+    "resolution_outcome": "resolved",
+    "outcome_signal": {
+      "repeat_contact_within_72h": false,
+      "resolution_hours": 1,
+      "csat": 4,
+      "refund_completed": true,
+      "delivery_confirmed": true
+    },
+    "lesson": "When refund is still inside the card window, precise rail-specific explanation prevents unnecessary escalation.",
+    "recommended_playbook": [
+      "State the verified payment method and refund window.",
+      "Avoid promising a faster manual refund.",
+      "Add monitoring trigger for the end of the policy window."
+    ]
+  },
+  {
+    "memory_id": "MEM-005",
+    "title": "Overdue return pickup kept failing until partner slot was rebooked",
+    "case_type": "return_pickup_delay",
+    "courier": "ReturnFleet",
+    "market": "UAE",
+    "zone": "Dubai",
+    "product_category": "stroller",
+    "failure_signature": [
+      "return pickup overdue",
+      "pickup request older than market window",
+      "partner failed to assign pickup slot",
+      "customer waiting since last week"
+    ],
+    "prior_action": "Rescheduled pickup and asked partner for failed-attempt reason.",
+    "resolution_outcome": "resolved",
+    "outcome_signal": {
+      "repeat_contact_within_72h": false,
+      "resolution_hours": 8,
+      "csat": 4,
+      "refund_completed": false,
+      "delivery_confirmed": true
+    },
+    "lesson": "Pickup delay cases need partner slot evidence, not only apology text.",
+    "recommended_playbook": [
+      "Create pickup reschedule task with original request timestamp.",
+      "Ask partner for failed-attempt reason and next available slot.",
+      "Do not promise refund timing until collection is verified."
+    ]
+  },
+  {
+    "memory_id": "MEM-006",
+    "title": "Damaged stroller replacement promised too early caused re-escalation",
+    "case_type": "damaged_or_wrong_item",
+    "courier": "DemoExpress",
+    "market": "UAE",
+    "zone": "Abu Dhabi",
+    "product_category": "stroller",
+    "failure_signature": [
+      "damaged item",
+      "replacement requested",
+      "photo evidence not reviewed",
+      "stock availability unknown"
+    ],
+    "prior_action": "Promised replacement before QC and stock check.",
+    "resolution_outcome": "re_escalated",
+    "outcome_signal": {
+      "repeat_contact_within_72h": true,
+      "resolution_hours": 36,
+      "csat": 2,
+      "refund_completed": false,
+      "delivery_confirmed": true
+    },
+    "lesson": "Replacement promise before evidence and stock review created a second complaint.",
+    "recommended_playbook": [
+      "Collect photo evidence and QC review before replacement approval.",
+      "Check stock availability before mentioning replacement.",
+      "Tell customer the case is under replacement review, not approved."
+    ]
+  }
+]

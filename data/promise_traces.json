@@ -1,0 +1,187 @@
+[
+  {
+    "order_id": "MW-1001",
+    "trace_id": "trace-mw-1001-promise",
+    "customer_visible_symptom": "Urgent formula order is out for delivery after the promised window, but no carrier ETA is available.",
+    "root_cause_summary": "Last-mile carrier ETA synchronization is the broken promise signal. Warehouse and dispatch completed, but the carrier trace lacks driver assignment, delivery-attempt, or exception detail.",
+    "broken_span": "carrier.eta.sync",
+    "missing_signals": [
+      "driver_assignment_id",
+      "carrier_exception_code",
+      "delivery_attempt_event"
+    ],
+    "instrumentation_gap": "The support agent can see out_for_delivery, but cannot see why ETA disappeared or whether the driver attempted delivery.",
+    "operational_playbook": [
+      "Open courier escalation with last scan and missing ETA.",
+      "Ask carrier ops for driver assignment, attempt status, and exception reason.",
+      "Do not promise an exact time until carrier trace is updated."
+    ],
+    "spans": [
+      {
+        "service": "magento.checkout",
+        "span_name": "checkout.order.created",
+        "status": "ok",
+        "duration_ms": 142,
+        "evidence": "Order created at 2026-04-27T08:15:00+04:00."
+      },
+      {
+        "service": "warehouse.fulfillment",
+        "span_name": "warehouse.pick_pack.completed",
+        "status": "ok",
+        "duration_ms": 1840,
+        "evidence": "Formula SKU reached warehouse processing."
+      },
+      {
+        "service": "courier.gateway",
+        "span_name": "courier.dispatch.handoff",
+        "status": "ok",
+        "duration_ms": 910,
+        "evidence": "Carrier DemoExpress accepted handoff."
+      },
+      {
+        "service": "courier.gateway",
+        "span_name": "carrier.eta.sync",
+        "status": "missing_signal",
+        "duration_ms": 30000,
+        "evidence": "Last scan exists, but ETA is null after promised delivery time."
+      }
+    ]
+  },
+  {
+    "order_id": "MW-1003",
+    "trace_id": "trace-mw-1003-delivered-dispute",
+    "customer_visible_symptom": "Order is marked delivered, but the customer says nothing arrived.",
+    "root_cause_summary": "Delivery confirmation and customer receipt disagree. The useful missing layer is proof-of-delivery evidence, not a faster apology.",
+    "broken_span": "courier.delivery.confirmation",
+    "missing_signals": [
+      "proof_of_delivery_photo",
+      "gps_dropoff_match",
+      "otp_or_signature"
+    ],
+    "instrumentation_gap": "Support can see delivered status, but needs proof-of-delivery trace before replacement or refund.",
+    "operational_playbook": [
+      "Open delivery investigation.",
+      "Request proof-of-delivery evidence from carrier.",
+      "Hold refund or replacement promise until investigation completes."
+    ],
+    "spans": [
+      {
+        "service": "courier.gateway",
+        "span_name": "courier.delivery.scan",
+        "status": "ok",
+        "duration_ms": 620,
+        "evidence": "Carrier marked delivered at 2026-04-27T17:55:00+04:00."
+      },
+      {
+        "service": "courier.gateway",
+        "span_name": "courier.delivery.confirmation",
+        "status": "needs_review",
+        "duration_ms": 800,
+        "evidence": "No proof-of-delivery attachment exists in the synthetic trace."
+      }
+    ]
+  },
+  {
+    "order_id": "MW-1006",
+    "trace_id": "trace-mw-1006-card-refund",
+    "customer_visible_symptom": "Customer asks about card refund after collected return.",
+    "root_cause_summary": "Return collection exists and card refund is still inside the policy window, so the right action is monitoring rather than escalation.",
+    "broken_span": "none",
+    "missing_signals": [],
+    "instrumentation_gap": "A production system should expose refund job state and payment provider reference once refund processing starts.",
+    "operational_playbook": [
+      "Confirm collection timestamp.",
+      "Check card refund policy window.",
+      "Send grounded waiting reply without promising faster manual refund."
+    ],
+    "spans": [
+      {
+        "service": "returns.service",
+        "span_name": "return.pickup.collected",
+        "status": "ok",
+        "duration_ms": 720,
+        "evidence": "Return collected at 2026-04-24T12:00:00+04:00."
+      },
+      {
+        "service": "payments.refund",
+        "span_name": "refund.window.check",
+        "status": "ok",
+        "duration_ms": 240,
+        "evidence": "Card refund is still inside the synthetic 7-day window."
+      }
+    ]
+  },
+  {
+    "order_id": "MW-1009",
+    "trace_id": "trace-mw-1009-pickup-delay",
+    "customer_visible_symptom": "UAE return pickup is waiting beyond the expected pickup window.",
+    "root_cause_summary": "Return pickup request exists, but pickup-partner scheduling has not completed within the UAE window.",
+    "broken_span": "return.pickup.partner.schedule",
+    "missing_signals": [
+      "pickup_partner_slot",
+      "failed_attempt_reason"
+    ],
+    "instrumentation_gap": "Support can see pickup_requested, but not the partner slot or failed-attempt reason.",
+    "operational_playbook": [
+      "Escalate pickup partner.",
+      "Request next available slot or failed-attempt reason.",
+      "Reschedule before sending a final customer promise."
+    ],
+    "spans": [
+      {
+        "service": "returns.service",
+        "span_name": "return.pickup.requested",
+        "status": "ok",
+        "duration_ms": 320,
+        "evidence": "Pickup requested at 2026-04-23T09:00:00+04:00."
+      },
+      {
+        "service": "returns.partner",
+        "span_name": "return.pickup.partner.schedule",
+        "status": "breached",
+        "duration_ms": 30000,
+        "evidence": "No confirmed pickup slot is present after the UAE pickup window."
+      }
+    ]
+  },
+  {
+    "order_id": "MW-1010",
+    "trace_id": "trace-mw-1010-stock-cancel",
+    "customer_visible_symptom": "Formula order was cancelled after payment because stock was unavailable.",
+    "root_cause_summary": "Stock reservation failed before courier handoff, so recovery should focus on substitute SKU or original-method refund.",
+    "broken_span": "inventory.reserve",
+    "missing_signals": [
+      "substitute_sku_rank",
+      "stock_replenishment_eta"
+    ],
+    "instrumentation_gap": "Support can see cancellation, but not the best substitute or replenishment ETA.",
+    "operational_playbook": [
+      "Check approved substitute formula SKUs.",
+      "If none are available, route refund handling.",
+      "Avoid implying the order reached dispatch."
+    ],
+    "spans": [
+      {
+        "service": "magento.checkout",
+        "span_name": "checkout.payment.captured",
+        "status": "ok",
+        "duration_ms": 510,
+        "evidence": "Card payment method is present in order fixture."
+      },
+      {
+        "service": "inventory.service",
+        "span_name": "inventory.reserve",
+        "status": "failed",
+        "duration_ms": 1270,
+        "evidence": "Formula stock became unavailable before dispatch."
+      },
+      {
+        "service": "courier.gateway",
+        "span_name": "courier.dispatch.handoff",
+        "status": "not_started",
+        "duration_ms": 0,
+        "evidence": "Carrier is not_dispatched."
+      }
+    ]
+  }
+]

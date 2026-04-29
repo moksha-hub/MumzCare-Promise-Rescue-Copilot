@@ -65,14 +65,73 @@ class ResolutionTask(BaseModel):
     priority: Urgency
     problem_detected: str = Field(min_length=1)
     why_this_team: str = Field(min_length=1)
+    root_cause_hypothesis: str = Field(min_length=1)
+    backend_signal_to_check: str = Field(min_length=1)
+    escalation_payload: list[str] = Field(min_length=1)
     next_steps: list[str] = Field(min_length=1)
     customer_promise_boundary: str = Field(min_length=1)
+    success_metric: str = Field(min_length=1)
 
-    @field_validator("next_steps")
+    @field_validator("next_steps", "escalation_payload")
     @classmethod
     def no_empty_steps(cls, values: list[str]) -> list[str]:
         if any(not value.strip() for value in values):
             raise ValueError("empty resolution steps are not allowed")
+        return values
+
+
+class TraceSpan(BaseModel):
+    service: str = Field(min_length=1)
+    span_name: str = Field(min_length=1)
+    status: str = Field(min_length=1)
+    duration_ms: int = Field(ge=0)
+    evidence: str = Field(min_length=1)
+
+
+class PromiseTrace(BaseModel):
+    order_id: str = Field(min_length=1)
+    trace_id: str = Field(min_length=1)
+    customer_visible_symptom: str = Field(min_length=1)
+    root_cause_summary: str = Field(min_length=1)
+    broken_span: str = Field(min_length=1)
+    missing_signals: list[str]
+    instrumentation_gap: str = Field(min_length=1)
+    operational_playbook: list[str] = Field(min_length=1)
+    spans: list[TraceSpan] = Field(min_length=1)
+
+    @field_validator("missing_signals", "operational_playbook")
+    @classmethod
+    def no_empty_trace_strings(cls, values: list[str]) -> list[str]:
+        if any(not value.strip() for value in values):
+            raise ValueError("empty trace strings are not allowed")
+        return values
+
+
+class OutcomeSignal(BaseModel):
+    repeat_contact_within_72h: bool
+    resolution_hours: float = Field(ge=0)
+    csat: int | None = Field(default=None, ge=1, le=5)
+    refund_completed: bool | None = None
+    delivery_confirmed: bool | None = None
+
+
+class OpsMemoryInsight(BaseModel):
+    memory_id: str = Field(min_length=1)
+    title: str = Field(min_length=1)
+    similarity_score: float = Field(ge=0.0, le=1.0)
+    pattern_summary: str = Field(min_length=1)
+    prior_action: str = Field(min_length=1)
+    resolution_outcome: Literal["resolved", "re_escalated", "churned", "pending"]
+    outcome_signal: OutcomeSignal
+    lesson: str = Field(min_length=1)
+    recommended_playbook: list[str] = Field(min_length=1)
+    semantic_reasoning: str = Field(min_length=1)
+
+    @field_validator("recommended_playbook")
+    @classmethod
+    def no_empty_playbook_steps(cls, values: list[str]) -> list[str]:
+        if any(not value.strip() for value in values):
+            raise ValueError("empty memory playbook steps are not allowed")
         return values
 
 
@@ -89,6 +148,9 @@ class DecisionPacket(BaseModel):
     human_review_required: bool
     uncertainty_flags: list[str]
     unsafe_promises_blocked: list[str]
+    promise_trace: PromiseTrace | None = None
+    ops_memory_insights: list[OpsMemoryInsight] = Field(default_factory=list)
+    obsidian_case_note: str | None = None
     reply_en: str = Field(min_length=1)
     reply_ar: str = Field(min_length=1)
     tool_trace: list[str]

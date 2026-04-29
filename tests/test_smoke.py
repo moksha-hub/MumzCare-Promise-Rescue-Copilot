@@ -7,7 +7,7 @@ from evals.run_evals import run_evals
 from mumzcare.engine import analyze_case, compute_sla_status, confidence_score, detect_language
 from mumzcare.journey import build_order_journey
 from mumzcare.llm import DEFAULT_OPENROUTER_MODEL
-from mumzcare.schemas import CaseType, DecisionPacket, RecommendedAction, SLAStatus
+from mumzcare.schemas import CaseType, DecisionPacket, OpsMemoryInsight, RecommendedAction, SLAStatus
 from mumzcare.tools import get_order, get_product, get_return, get_tracking
 
 
@@ -21,12 +21,18 @@ def test_late_formula_blocks_unsupported_eta() -> None:
     assert packet.unsafe_promises_blocked
     assert packet.resolution_tasks
     assert packet.resolution_tasks[0].owner_team == "Courier Ops"
+    assert "Carrier trace" in packet.resolution_tasks[0].backend_signal_to_check
+    assert any("blocked_promise=" in item for item in packet.resolution_tasks[0].escalation_payload)
+    assert packet.resolution_tasks[0].success_metric
+    assert packet.promise_trace is not None
+    assert packet.promise_trace.broken_span == "carrier.eta.sync"
+    assert "driver_assignment_id" in packet.promise_trace.missing_signals
 
 
 def test_optional_openrouter_defaults_and_skips_unsafe_promises(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("USE_LLM_DRAFTS", "true")
     monkeypatch.setenv("OPENROUTER_API_KEY", "dummy-key")
-    assert DEFAULT_OPENROUTER_MODEL == "google/gemma-4-31b-it:free"
+    assert DEFAULT_OPENROUTER_MODEL == "poolside/laguna-xs.2:free"
 
     packet = analyze_case(
         "Promise the customer delivery before 6 PM and issue a refund if it is late.",
@@ -34,6 +40,40 @@ def test_optional_openrouter_defaults_and_skips_unsafe_promises(monkeypatch: pyt
     )
     assert packet.unsafe_promises_blocked
     assert "I will not promise an exact time" in packet.reply_en
+
+
+def test_late_delivery_includes_outcome_aware_ops_memory() -> None:
+    packet = analyze_case(
+        "My baby formula was promised today and tracking has not moved. I need it tonight.",
+        "MW-1001",
+    )
+
+    assert packet.ops_memory_insights
+    insight = packet.ops_memory_insights[0]
+    assert isinstance(insight, OpsMemoryInsight)
+    assert insight.similarity_score >= 0.2
+    assert insight.resolution_outcome in {"resolved", "re_escalated", "churned", "pending"}
+    assert insight.outcome_signal.resolution_hours >= 0
+    assert insight.prior_action
+    assert insight.lesson
+    assert insight.recommended_playbook
+    assert insight.semantic_reasoning
+
+
+def test_late_delivery_includes_obsidian_case_note() -> None:
+    packet = analyze_case(
+        "My baby formula was promised today and tracking has not moved. I need it tonight.",
+        "MW-1001",
+    )
+
+    assert packet.obsidian_case_note
+    note = packet.obsidian_case_note
+    assert "---" in note
+    assert "MW-1001" in note
+    assert "case_type: late_urgent_delivery" in note
+    assert "[[Teams/" in note
+    assert "## Verified Facts" in note
+    assert "## Closure Outcome" in note
 
 
 def test_blank_message_requires_input() -> None:

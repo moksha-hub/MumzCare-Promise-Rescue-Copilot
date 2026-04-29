@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import timedelta
 
 from mumzcare.llm import maybe_refine_replies
+from mumzcare.ops_memory import analyze_ops_memory, generate_obsidian_case_note
+from mumzcare.promise_trace import analyze_promise_trace
 from mumzcare.schemas import CaseType, DecisionPacket, RecommendedAction, ResolutionTask, SLAStatus, Urgency
 from mumzcare.tools import ORDER_RE, NOW, get_order, get_product, get_return, get_tracking, parse_dt, parse_order_id, search_policy
 
@@ -210,6 +212,10 @@ def analyze_case(message: str, order_id: str | None = None) -> DecisionPacket:
     uncertainty = uncertainty_flags(case_type, order, tracking, returns, citations)
     blocked = blocked_promises(message, tracking, returns, actions)
     confidence = confidence_score(case_type, order, tracking, returns, citations, uncertainty)
+    promise_trace = analyze_promise_trace(resolved_order_id, case_type, sla_status)
+    tool_trace.append(f"analyze_promise_trace({resolved_order_id})")
+    ops_memory_insights = analyze_ops_memory(message, case_type, sla_status, order, tracking, returns, product, promise_trace)
+    tool_trace.append("analyze_ops_memory(...)")
     human_review = (
         urgency in {Urgency.high, Urgency.critical}
         or RecommendedAction.human_escalation in actions
@@ -232,10 +238,14 @@ def analyze_case(message: str, order_id: str | None = None) -> DecisionPacket:
         human_review_required=human_review,
         uncertainty_flags=uncertainty,
         unsafe_promises_blocked=blocked,
+        promise_trace=promise_trace,
+        ops_memory_insights=ops_memory_insights,
         reply_en=reply_en,
         reply_ar=reply_ar,
         tool_trace=tool_trace,
     )
+    packet.obsidian_case_note = generate_obsidian_case_note(packet, message, order, tracking, product)
+    packet = DecisionPacket.model_validate(packet.model_dump())
     return maybe_refine_replies(packet)
 
 
@@ -356,8 +366,12 @@ def build_resolution_tasks(
                 priority=urgency,
                 problem_detected=problem_summary(case_type, order_id),
                 why_this_team=owner_reason(action),
+                root_cause_hypothesis=root_cause_hypothesis(case_type, action),
+                backend_signal_to_check=backend_signal_to_check(case_type, action),
+                escalation_payload=escalation_payload(case_type, action, order_id, uncertainty, blocked),
                 next_steps=next_steps(action, order_id, uncertainty, blocked),
                 customer_promise_boundary=promise_boundary(action, uncertainty, blocked),
+                success_metric=success_metric(action),
             )
         )
     return tasks
@@ -409,6 +423,99 @@ def owner_reason(action: RecommendedAction) -> str:
         RecommendedAction.ask_for_missing_info: "Customer Care Intake must collect missing identifiers before any resolution.",
         RecommendedAction.refuse_medical_advice: "Safety Escalation should redirect medical concerns to qualified care.",
         RecommendedAction.reassure_wait: "Customer Care can give a grounded status update while staying inside policy.",
+    }[action]
+
+
+def root_cause_hypothesis(case_type: CaseType, action: RecommendedAction) -> str:
+    if case_type == CaseType.late_urgent_delivery:
+        return "The order is past or near its promise window, but the carrier signal is not strong enough to safely promise a final ETA."
+    if case_type == CaseType.delivered_not_received:
+        return "Delivery confirmation and customer receipt disagree, so the issue is likely in proof-of-delivery, handoff, address, or scan accuracy."
+    if case_type == CaseType.damaged_or_wrong_item:
+        return "The fulfillment or transport chain may have produced an item-condition mismatch that needs evidence review before approval."
+    if case_type == CaseType.return_pickup_delay:
+        return "The return pickup partner or scheduling queue may be outside the market-specific pickup window."
+    if case_type == CaseType.refund_timing:
+        return "The refund is constrained by return collection/review state and the payment rail rather than only customer-service wording."
+    if case_type == CaseType.stock_cancellation:
+        return "The order could not complete stock reservation before dispatch, so recovery must happen through substitution or refund routing."
+    if case_type == CaseType.out_of_scope:
+        return "The request crosses a safety or trust boundary and must be handled by a human owner."
+    return "The intake lacks enough verified order context to identify a reliable operational root cause."
+
+
+def backend_signal_to_check(case_type: CaseType, action: RecommendedAction) -> str:
+    if action == RecommendedAction.courier_escalation:
+        return "Carrier trace: last scan timestamp, hub/driver assignment, exception code, ETA calculation, and delivery-attempt events."
+    if action == RecommendedAction.investigate_missing_delivery:
+        return "Proof-of-delivery trace: delivery scan, GPS/address note, OTP/signature/photo if available, and customer contact attempts."
+    if action == RecommendedAction.exchange_or_replacement:
+        return "Return evidence trace: uploaded image, SKU picked, warehouse QC result, stock availability, and replacement eligibility."
+    if action == RecommendedAction.pickup_reschedule:
+        return "Return pickup trace: pickup request timestamp, assigned partner, failed-attempt reason, and next available slot."
+    if action in {RecommendedAction.refund_original, RecommendedAction.refund_wallet}:
+        return "Refund trace: return collection, inspection outcome, refund job state, payment provider reference, and wallet/original-method rail."
+    if action == RecommendedAction.stock_substitution:
+        return "Stock trace: reservation event, cancellation reason, substitute SKU availability, and payment capture/refund state."
+    if action == RecommendedAction.human_escalation:
+        return "Support QA trace: policy citation, confidence, uncertainty flags, blocked promises, and agent approval decision."
+    if action == RecommendedAction.ask_for_missing_info:
+        return "Intake trace: order ID extraction, customer identifier match, and missing fields needed before lookup."
+    if action == RecommendedAction.refuse_medical_advice:
+        return "Safety trace: medical-term trigger, refusal template, and separate order-support path if needed."
+    if action == RecommendedAction.deny_with_reason:
+        return "Trust trace: requested status change, verified operational state, and policy-safe denial reason."
+    return "Customer-care trace: verified ETA/window, latest order state, and follow-up monitoring trigger."
+
+
+def escalation_payload(
+    case_type: CaseType,
+    action: RecommendedAction,
+    order_id: str | None,
+    uncertainty: list[str],
+    blocked: list[str],
+) -> list[str]:
+    target = order_id or "unknown order"
+    payload = [
+        f"case_type={case_type.value}",
+        f"order_id={target}",
+        f"action={action.value}",
+    ]
+    if uncertainty:
+        payload.append(f"uncertainty={uncertainty[0]}")
+    if blocked:
+        payload.append(f"blocked_promise={blocked[0]}")
+    if action == RecommendedAction.courier_escalation:
+        payload.append("request=verified courier update before customer ETA promise")
+    elif action == RecommendedAction.investigate_missing_delivery:
+        payload.append("request=proof-of-delivery review before refund/replacement promise")
+    elif action == RecommendedAction.exchange_or_replacement:
+        payload.append("request=evidence and stock review before exchange/replacement approval")
+    elif action == RecommendedAction.pickup_reschedule:
+        payload.append("request=pickup partner reschedule or failed-attempt explanation")
+    elif action in {RecommendedAction.refund_original, RecommendedAction.refund_wallet}:
+        payload.append("request=refund-state verification and payment-rail specific customer update")
+    elif action == RecommendedAction.stock_substitution:
+        payload.append("request=substitute SKU options for the same baby-essential need")
+    elif action == RecommendedAction.human_escalation:
+        payload.append("request=senior agent approval before final customer promise")
+    return payload
+
+
+def success_metric(action: RecommendedAction) -> str:
+    return {
+        RecommendedAction.courier_escalation: "Verified courier update or exception reason added before the next customer reply.",
+        RecommendedAction.investigate_missing_delivery: "Delivery investigation outcome recorded before refund or replacement decision.",
+        RecommendedAction.exchange_or_replacement: "Evidence reviewed and exchange/replacement decision recorded with stock check.",
+        RecommendedAction.pickup_reschedule: "Pickup partner confirms next slot or failed-attempt reason.",
+        RecommendedAction.refund_original: "Refund job status and payment-provider reference are available to support.",
+        RecommendedAction.refund_wallet: "Wallet refund route is confirmed and explained without cash-refund promise.",
+        RecommendedAction.stock_substitution: "Approved substitute or original-method refund path is selected.",
+        RecommendedAction.human_escalation: "Senior agent approves, edits, or rejects the recommended customer promise.",
+        RecommendedAction.deny_with_reason: "Unsafe operational change is denied and correct process is documented.",
+        RecommendedAction.ask_for_missing_info: "Customer provides an order identifier that can be verified.",
+        RecommendedAction.refuse_medical_advice: "Medical guidance is refused while any separate order issue is routed safely.",
+        RecommendedAction.reassure_wait: "Customer receives a grounded update and monitoring trigger remains active.",
     }[action]
 
 
@@ -497,21 +604,29 @@ def promise_boundary(action: RecommendedAction, uncertainty: list[str], blocked:
 
 def build_facts(order: dict, tracking: dict | None, returns: dict | None, product: dict | None) -> list[str]:
     facts = [
+        f"Order {order['order_id']} was created at {order['created_at']} for {order['country']} / {order['emirate']}.",
         f"Order {order['order_id']} status is {order['status']}.",
         f"Promised delivery time is {order['promised_delivery_at']}.",
         f"Payment method is {order['payment_method']}.",
+        f"Customer priority marker is {order['priority']}.",
     ]
     if product:
-        facts.append(f"Primary item is {product['name_en']} in category {product['category']}.")
+        facts.append(f"Primary item is {order['items'][0]['qty']} x {product['name_en']} in category {product['category']}.")
+        facts.append(f"Product urgent-essential flag is {bool(product.get('urgent_essential'))}.")
     if tracking:
+        facts.append(f"Carrier is {tracking.get('carrier') or 'unknown'}.")
         facts.append(f"Tracking status is {tracking['current_status']} with last scan at {tracking.get('last_scan_at') or 'unknown'}.")
         facts.append(f"Carrier ETA is {tracking.get('eta') or 'unavailable'}.")
+    else:
+        facts.append("No tracking record exists in the synthetic backend for this order.")
     if returns:
         facts.append(f"Return status is {returns['status']}.")
         if returns.get("collected_at"):
             facts.append(f"Return was collected at {returns['collected_at']}.")
         if returns.get("pickup_requested_at"):
             facts.append(f"Pickup was requested at {returns['pickup_requested_at']}.")
+    else:
+        facts.append("No return/refund record exists in the synthetic backend for this order.")
     return facts
 
 

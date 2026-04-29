@@ -4,48 +4,83 @@ Track: A - AI Engineering Intern
 
 ## Summary
 
-MumzCare Promise Rescue Copilot is an internal support/ops prototype for Mumzworld agents handling urgent post-purchase issues: late baby essentials, delivered-but-missing orders, damaged or wrong items, return pickup delays, refund timing confusion, and stock cancellations. Given a customer message plus an order ID, it verifies facts from synthetic order/tracking/return tools, retrieves relevant policy snippets, returns a Pydantic-validated rescue plan, blocks unsupported promises, and drafts English and Arabic replies.
+MumzCare is an internal support and operations copilot for urgent Mumzworld post-order issues: late baby essentials, delivered-but-missing orders, damaged or wrong items, return pickup delays, refund timing confusion, and stock cancellations.
 
-The product thesis is simple: Mumzworld already promises speed. The high-leverage AI problem is recovering trust when that promise breaks.
+Given a customer message and an order ID, it verifies synthetic order facts, retrieves policy citations, traces where the promise broke, checks outcome-aware Ops Memory, builds an internal recovery plan, blocks unsafe promises, generates an Obsidian-compatible case note, and drafts safe English and Arabic replies.
 
-## Who It Is For
+The core question is:
 
-The primary user is a Mumzworld support or operations agent, not the end customer. The app is not trying to be a customer order tracker or a translation tool. It is a decision copilot for the moment when a ticket is messy and risky:
+```text
+Have we seen this failure pattern before, and did our response actually fix it?
+```
 
-1. detect the real post-order problem,
-2. verify what the company actually knows from order, tracking, return, product, and policy tools,
-3. assign the right internal owner and next steps, and
-4. draft a safe English/Arabic customer reply without inventing an ETA, refund, or replacement promise.
+This is not a customer chatbot, a translation wrapper, or a status page. It is a company-side decision tool for support agents who need to know what happened, what is verified, who should act next, what not to promise, and what can safely be sent to the customer.
 
-That is why the UI puts the company-side resolution workspace first and keeps the customer-facing reply in a separate draft tab.
+## Why This Problem
 
-## Why This Pain Point
+Mumzworld operates in a high-trust category. If baby formula, diapers, a stroller, a return pickup, or a refund goes wrong, the support reply must be accurate and careful. The risky part is not only the delay itself. The risky part is a weak recovery flow:
 
-Mumzworld's public experience depends on fast delivery, easy returns, refund clarity, and support trust. Public policy pages describe same-day or near-term delivery promises, return pickup windows, and refund timing by payment method. Public reviews show that when something goes wrong, the painful part is often not only the delay; it is vague recovery, unclear refund timing, or a reply that does not match the customer's actual situation.
+- promising an ETA when the carrier has not confirmed one
+- approving a refund before the payment/return state supports it
+- giving generic apologies instead of a real escalation payload
+- routing the ticket to the wrong internal team
+- answering Arabic as if it were a literal English translation
+- repeating the same failed playbook because past outcomes were not reused
 
-I chose this over a gift finder, PDP generator, review summarizer, or broad chatbot because promise recovery has sharper failure modes: hallucinated ETA, unsupported refund approval, unsafe medical advice, poor Arabic, and generic apologies. Those are exactly the behaviors Track A asks us to detect and evaluate.
+This prototype makes no assumption about Mumzworld's internal support tools. It proposes an AI layer that could sit above existing order, tracking, return, payment, helpdesk, and observability systems.
+
+## Why Obsidian Matters
+
+The strongest add-on is the Obsidian-style Ops Memory layer.
+
+A normal ticket system closes tickets one by one. Obsidian-style linked Markdown turns each resolved case into reusable institutional memory. Each case note can link to an owner team, courier, zone, product category, case type, similar memory record, and outcome.
+
+Example generated links:
+
+```text
+[[Teams/Courier Ops]]
+[[Memory/MEM-002]]
+case/late_urgent_delivery
+urgency/critical
+resolution_outcome: pending
+```
+
+That creates a support knowledge graph. Over time, patterns become visible:
+
+- formula + stale scan + missing ETA repeatedly re-escalates
+- delivered-not-received cases resolve faster when proof-of-delivery is checked first
+- damaged stroller cases fail when replacement is promised before evidence and stock review
+- a courier/zone combination may need vendor-performance review rather than standard escalation
+
+The prototype currently generates the Obsidian-compatible Markdown note locally. In a real system, reviewed notes could sync to an internal Obsidian vault, Git-backed Markdown repo, or knowledge base. The note includes a `resolution_outcome` field because memory is only useful if the system learns whether the recommended response actually worked.
 
 ## What It Does
 
-For each support case, the copilot returns:
+For each case, MumzCare returns a validated `DecisionPacket`:
 
-- `input_language`: `en`, `ar`, or `mixed`
-- `case_type`: late delivery, delivered-not-received, damaged/wrong item, return pickup delay, refund timing, stock cancellation, unknown, or out of scope
-- `sla_status`: on track, at risk, breached, not applicable, or unknown
-- `urgency`: low, medium, high, or critical
-- `recommended_actions`: controlled enum actions such as courier escalation, pickup reschedule, refund wallet, replacement review, or human escalation
-- `resolution_tasks`: simulated internal company-side tasks with owner team, problem detected, next steps, and promise boundary
-- `verified_facts`: facts from order, tracking, return, and product tools
-- `policy_citations`: retrieved policy snippets with source section and score
-- `confidence`, `human_review_required`, `uncertainty_flags`, and `unsafe_promises_blocked`
-- `reply_en` and `reply_ar`
-- `tool_trace`: ordered list of tool and safety-check invocations used to produce the decision
+| Field | Purpose |
+|---|---|
+| `input_language` | Detects English, Arabic, or mixed input |
+| `case_type` | Late delivery, delivered-not-received, damaged/wrong item, return pickup delay, refund timing, stock cancellation, unknown, or out of scope |
+| `sla_status` | On track, at risk, breached, not applicable, or unknown |
+| `urgency` | Low, medium, high, or critical |
+| `recommended_actions` | Controlled actions such as courier escalation, pickup reschedule, refund routing, replacement review, or human escalation |
+| `resolution_tasks` | Internal task cards with owner team, root-cause hypothesis, backend signal to check, escalation payload, next steps, promise boundary, and success metric |
+| `promise_trace` | Synthetic OpenTelemetry-style trace showing broken span, missing signals, instrumentation gap, and operations playbook |
+| `ops_memory_insights` | Similar synthetic historical cases with outcome, prior action, lesson, similarity score, and recommended playbook |
+| `obsidian_case_note` | Auto-generated Markdown note with frontmatter, links, verified facts, blocked promises, memory matches, and closure outcome fields |
+| `verified_facts` | Facts from order, tracking, return, and product tools only |
+| `policy_citations` | Retrieved policy sections with source URL and score |
+| `confidence` | Bounded 0 to 1 score degraded by missing data and uncertainty |
+| `human_review_required` | True when urgency, uncertainty, blocked promises, or confidence require a human |
+| `uncertainty_flags` | What the system could not verify |
+| `unsafe_promises_blocked` | ETA/refund/replacement/medical promises the copilot refused |
+| `reply_en`, `reply_ar` | Safe bilingual customer reply drafts |
+| `tool_trace` | Ordered audit trail of lookups and checks |
 
-The LLM is optional. The default path is deterministic and fully runnable without an API key. If `USE_LLM_DRAFTS=true` and `OPENROUTER_API_KEY` is set, OpenRouter can refine the replies without changing facts.
+## Setup And Run
 
-Important distinction: the project was built and audited with AI coding assistance, documented below. The default runtime prototype does not call an LLM or paid API. That was an intentional scope choice so reviewers can run and evaluate the submission without keys, rate limits, or provider variability.
-
-## Setup
+The project runs without paid keys.
 
 Windows PowerShell:
 
@@ -58,7 +93,7 @@ python -m mumzcare.cli analyze --order-id MW-1001 --message "My baby formula was
 streamlit run streamlit_app.py
 ```
 
-macOS/Linux:
+macOS / Linux:
 
 ```bash
 python -m venv .venv
@@ -69,112 +104,97 @@ python -m mumzcare.cli analyze --order-id MW-1001 --message "My baby formula was
 streamlit run streamlit_app.py
 ```
 
-The repo runs without paid keys. Optional model drafting:
-
-Windows PowerShell:
+Optional OpenRouter use:
 
 ```bash
-copy .env.example .env
-# set OPENROUTER_API_KEY and USE_LLM_DRAFTS=true
+cp .env.example .env          # Windows: copy .env.example .env
+# Set OPENROUTER_API_KEY=your_key
+# Optional: USE_LLM_DRAFTS=true for reply tone refinement
+# Optional: USE_LLM_MEMORY=true for one-sentence semantic memory reasoning
 ```
 
-macOS/Linux:
-
-```bash
-cp .env.example .env
-# set OPENROUTER_API_KEY and USE_LLM_DRAFTS=true
-```
+The default optional model is `poolside/laguna-xs.2:free`, configurable through `OPENROUTER_MODEL`.
 
 ## Architecture
 
 ```text
-Customer message + order_id
-  -> language / safety / order parsing
-  -> tools: order, tracking, return, product
+Customer message + order ID
+  -> safety gates: blank input, medical advice, policy abuse, missing order
+  -> tool lookups: order, tracking, return, product
   -> TF-IDF RAG over compact policy docs
-  -> deterministic decision engine + optional LLM reply refinement
+  -> synthetic promise trace over OpenTelemetry-style spans
+  -> outcome-aware fuzzy Ops Memory over synthetic case notes
+  -> deterministic decision engine
+  -> unsafe-promise blocking
   -> Pydantic DecisionPacket validation
-  -> safety checks: no fake ETA, no fake refund, no fake policy
-  -> EN/AR replies + JSON packet + tool trace
+  -> Obsidian-style case note generation
+  -> optional OpenRouter refinement
+  -> Streamlit UI / CLI / JSON output
 ```
 
-Key design choice: the model is not the source of operational truth. Order facts, tracking state, return state, policy citations, and unsafe promise checks come from code-level tools and validation.
+Key design choice: the model is not the source of operational truth. Order facts, tracking state, return state, policy citations, and unsafe promise checks come from deterministic tools and schema validation. Optional LLM calls can improve wording or summarize memory reasoning, but they cannot approve refunds, invent ETAs, change facts, or bypass validation.
 
-For a fuller explanation of each component and workflow, see `ARCHITECTURE.md`.
+All operational data is synthetic:
 
-Architecture diagram source is embedded in `ARCHITECTURE.md` as Mermaid. To turn it into a draw.io image, open diagrams.net, choose `Arrange -> Insert -> Advanced -> Mermaid`, paste the block, then export or screenshot it.
+- `data/orders.json`
+- `data/tracking_events.json`
+- `data/returns.json`
+- `data/products.json`
+- `data/promise_traces.json`
+- `data/memory_cases.json`
+- `data/policy_docs.md`
 
-Deterministic timing note: `mumzcare/tools.py` fixes `NOW` at `2026-04-27 21:15` in the `Asia/Dubai` timezone. That is deliberate for this take-home so SLA, return-pickup, and refund-window evals are reproducible on any reviewer machine.
+No retailer product-page scraping, catalog scraping, customer data, real order data, or real telemetry is used.
 
-## Demo Surface
+Time-sensitive evals use a fixed clock in `mumzcare/tools.py`: `2026-04-27 21:15` in `Asia/Dubai`. This keeps delivery, return pickup, and refund-window results reproducible.
 
-The Streamlit app is intentionally an internal support-agent workspace, not a customer portal. The customer reply is only one tab; the primary screen is the company-side resolution workflow.
+## UI Demo Surface
 
-- Operator pathway: detect issue, verify facts, assign owner, then draft safe EN/AR replies.
-- Triage summary: detected problem, case type, SLA, urgency, confidence, and input language.
-- Demo boundary: the app uses synthetic orders `MW-1001` through `MW-1010`; custom messages work against those orders, while real external order IDs return an explicit unknown-order response.
-- Input validation: blank customer messages are blocked before analysis so stale/default order facts are not shown as a real decision.
-- Resolution workspace: internal task cards show owner team, why that owner, next steps, and promise boundary.
-- Evidence and journey: known orders show lifecycle stages from order received through courier handoff, delivery confirmation, and return/refund stages when available.
-- Customer reply draft: English and Arabic customer-facing replies are separated from internal operations details.
-- Raw audit JSON: full structured output is still available for reviewer inspection.
+The Streamlit app is an internal support workspace.
 
-This is intentional. A support agent should not have to read a debug dump, but a reviewer can still inspect how the answer was grounded. `tool_trace` is an audit artifact: it shows which lookup tools were actually called before the recommendation was produced.
+| Area | What to show |
+|---|---|
+| Triage summary | Case type, SLA, urgency, confidence, input language |
+| Resolution plan | Internal owner, root cause, escalation payload, next steps, success metric |
+| Ops memory | Similar past cases, outcome, prior action, lesson, playbook |
+| Promise trace | Broken span, missing backend signals, instrumentation gap |
+| Evidence | Verified facts, policy citations, order journey, tool trace |
+| Reply draft | English and Arabic replies, separated from internal details |
+| Audit JSON | Full validated packet |
 
-## Arabic Quality Strategy
+Demo data uses synthetic orders `MW-1001` through `MW-1010`. Custom messages work against those orders. External order IDs return an explicit unknown-order response. Blank messages are blocked before analysis.
 
-Arabic is not generated as a literal translation of English. The prompt and templates ask for clear Modern Standard Arabic suitable for UAE/GCC ecommerce support. The Arabic reply must preserve verified facts, avoid adding compensation or ETA, and keep a warm but direct customer-care tone.
+## Arabic Quality
 
-I chose MSA over dialect-specific Arabic because Mumzworld serves multiple GCC markets and the prototype needs consistency. A production version should add native-speaker review, regional tone presets, and regression tests for Arabic wording.
+Arabic is not treated as literal translation. The system uses separate Arabic templates, Arabic product names, Arabic labels for payment/status/action, and RTL rendering in the UI.
 
-## Uncertainty Handling
+Modern Standard Arabic was chosen because Mumzworld serves multiple GCC markets. Production work should add native Arabic QA, KSA/UAE tone variants, and Arabic-specific retrieval tests.
 
-The system is intentionally conservative. It returns `unknown`, `null`-like missing facts, or `human_review_required: true` when facts are not supported.
+## Uncertainty And Safety
+
+The system is conservative by design.
 
 Hard rules:
 
-- Unknown order ID: ask for the order ID, do not invent facts.
-- Missing carrier ETA: do not promise an exact delivery time.
-- Refund unsupported by payment/return state: do not approve it.
-- No policy citation: do not claim policy support.
-- Medical/safety advice: refuse and escalate.
-- Low confidence: require human review.
-- Malformed output: fail validation instead of silently passing.
+- unknown order ID: ask for the order number, do not invent facts
+- missing carrier ETA: do not promise an exact delivery time
+- unsupported refund: do not approve it
+- damaged/replacement case: do not promise replacement before evidence and stock review
+- no policy citation: do not claim policy support
+- medical/safety advice: refuse and escalate
+- low confidence: require human review
+- malformed structured output: fail validation instead of silently passing
 
-The product principle is promise safety: it is better to say "I do not know yet" than to invent a delivery time, refund approval, or policy exception.
+Schema guardrails:
 
-## Quality Guardrails
+- in-scope cases require verified facts
+- in-scope cases require at least one policy citation
+- `out_of_scope` and `unknown` can omit citations because they should not attach irrelevant policy
+- `confidence < 0.65` forces `human_review_required`
+- list fields reject empty strings
+- confidence and citation scores are bounded from 0 to 1
 
-The assignment calls out several failure modes. This prototype treats them as explicit guardrails:
-
-- Inventing facts not in the input: all operational facts come from `get_order`, `get_tracking`, `get_return`, and `get_product`; the final packet exposes `verified_facts` and `tool_trace`.
-- Hiding uncertainty: missing order IDs, unknown orders, missing carrier ETA, missing return records, and low-confidence cases populate `uncertainty_flags` and require human review.
-- Padding with generic claims: replies mention the verified order, product, status, payment method, or missing fact instead of generic apology-only text.
-- Literal Arabic translation: Arabic copy uses separate templates, Arabic product names, Arabic status/action/payment labels, and RTL UI rendering. Evals check for Arabic script, mojibake, and raw enum leakage.
-- Malformed JSON or empty-string fields: Pydantic validates the `DecisionPacket`; in-scope decisions require facts and citations, and list fields reject empty strings.
-- Confident out-of-scope answers: medical advice and policy-abuse requests return `out_of_scope`, refusal actions, blocked-promise notes, and human escalation.
-
-Schema guardrails in `DecisionPacket`:
-
-- `reply_en` and `reply_ar` are required non-empty strings.
-- `confidence` and citation scores are bounded from `0.0` to `1.0`.
-- In-scope cases require `verified_facts`.
-- In-scope cases require at least one `policy_citation`.
-- `out_of_scope` and `unknown` cases are intentionally allowed to have no citations because medical refusals, policy-abuse refusals, and missing-order cases should not pretend to cite an irrelevant policy.
-- If `confidence < 0.65`, `human_review_required` must be true.
-- List fields such as `verified_facts`, `uncertainty_flags`, `unsafe_promises_blocked`, and `tool_trace` reject empty strings.
-
-## Tradeoffs
-
-Why this problem: I chose promise rescue because it is a real support pain point with concrete failure modes: broken delivery promises, missing items, delayed refunds, unclear return pickup, and unsafe agent replies. It is narrower and more testable than a full chatbot, but still valuable for customer trust and support operations.
-
-What I rejected: a gift finder, PDP generator, review summarizer, duplicate catalog detector, and full support chatbot. The first three are easier to fake with polished prose. Duplicate detection is valuable but hard to defend without real catalog data. A chatbot is too broad for a 5-hour prototype and harder to evaluate safely.
-
-Model and architecture choice: the default system is deterministic and local because reviewers should be able to run it without paid keys. RAG provides policy grounding, Pydantic validates structure, rule-based tools verify order facts, and optional OpenRouter refinement can improve wording only after the packet is already valid.
-
-What I cut: live backend integrations, courier APIs, real refund actions, image evidence for damaged items, fine-tuning, vector databases, and model-graded evals.
-
-What I would build next: real API adapters, embedding retrieval, policy versioning, native Arabic QA, support-agent accept/edit/reject feedback, and severity calibration from historical tickets.
+Ops Memory is advisory. It can suggest that a prior playbook worked or failed, but current verified facts, policy citations, safety gates, and human review always win.
 
 ## Evals
 
@@ -184,75 +204,165 @@ Run:
 python -m evals.run_evals
 ```
 
-Current result:
+Latest verified result:
 
-- 16 test cases
-- Average score: 1.0
-- Pass rate: 1.0
-- Refusal/unsafe-promise pass rate: 1.0
+```text
+case_count: 16
+average_score: 1.0
+pass_rate: 1.0
+refusal_case_pass_rate: 1.0
+```
 
-The eval set includes easy, adversarial, Arabic, mixed EN/AR, missing-order, refund-window, return-pickup, stock cancellation, delivered-not-received, policy-abuse, and medical out-of-scope cases. It also checks bilingual output presence, reply safety, and static Arabic quality issues such as mojibake or raw enum leakage.
+The 16 cases include:
 
-Evals and unit tests are separate on purpose. Evals are product-behavior benchmarks: they check whether the copilot makes the right support decision across realistic and adversarial scenarios. Unit tests are logic checks: they cover language detection, SLA calculation, confidence degradation, schema failure behavior, and key safety paths.
+- easy cases: late formula delivery, on-track delivery, card refund inside window
+- operations cases: delivered-not-received, damaged stroller, return pickup overdue, stock cancellation
+- multilingual cases: Arabic delivered-not-received, mixed EN/AR partial delivery
+- adversarial cases: promise delivery by 6 PM and refund if late, policy-abuse request
+- uncertainty/refusal cases: missing order ID, unknown order, medical advice refusal
 
-One honest residual risk: urgency calibration is still based on hand-written rules. E07 now treats an overdue Mada refund on a breast-pump order as `high`, not `critical`, because a refund delay is serious but not the same as an active delivery emergency. In production I would tune these thresholds with real support severity labels.
+Rubric:
 
-## Tooling
+| Metric | Weight |
+|---|---:|
+| Case classification | 15% |
+| SLA status | 12% |
+| Urgency | 12% |
+| Recommended action | 15% |
+| Human review behavior | 10% |
+| Unsafe-promise/refusal behavior | 10% |
+| Schema validity | 5% |
+| Citation grounding | 5% |
+| Outcome-aware Ops Memory | 4% |
+| Obsidian note presence | 4% |
+| Bilingual output presence | 4% |
+| Reply safety | 3% |
+| Static Arabic quality | 1% |
 
-Tools used:
+Critical safety failures cap the score at 0.60, including medical advice, failing to block unsupported promises, malformed output, claiming policy support without citation, or leaking broken Arabic/mojibake.
 
-- Codex/GPT-5 coding agent for pair-programming, repo edits, debugging, documentation, and reviewer-style audit passes.
-- Agent-style review loops for product strategy, senior engineering review, eval design, Arabic/bilingual audit, UI/demo audit, and README/TRADEOFFS drafting.
-- Web research for official Mumzworld policy pages and public review signals.
-- Pydantic for schema validation.
-- scikit-learn `TfidfVectorizer` for lightweight local RAG.
-- Streamlit for the one-page demo UI.
-- Pytest and the custom eval runner for regression checks.
-- OpenRouter is supported as an optional reply-refinement path, but the default verified run does not require a key.
+Honest residual risks:
+
+- classifier is rule-based and can miss indirect, slang-heavy, typo-heavy, or unusual Arabic phrasing
+- TF-IDF policy retrieval is explainable but weaker than embeddings for semantic synonyms
+- urgency thresholds are hand-calibrated and should be tuned with real support severity labels
+- Ops Memory uses synthetic historical cases; production would need solved-ticket outcomes and repeat-contact signals
+
+## Tradeoffs
+
+Why this problem:
+
+Promise rescue is high-leverage because urgent baby/mother orders combine customer emotion, operational constraints, policy rules, and safety risk. It is narrow enough to ship in a take-home, but still tests real AI engineering judgment.
+
+What I rejected:
+
+- Gift finder: useful but lower operational urgency
+- PDP content generator: easier to make look good with prose, less tied to trust recovery
+- Review summarizer: valuable, but less direct operational action
+- Full customer-service chatbot: too broad and harder to evaluate safely in 5 hours
+- Duplicate catalog detector: high internal value, but hard to defend without real catalog data
+
+Architecture choice:
+
+- deterministic tools for facts
+- TF-IDF RAG for policy grounding
+- synthetic promise trace for backend signal reasoning
+- fuzzy Ops Memory for outcome-aware precedent
+- Pydantic for structured output validation
+- optional OpenRouter for wording/memory reasoning only
+- Streamlit for a simple, inspectable UI
+
+What I cut:
+
+- real backend/courier/refund integrations
+- live OpenTelemetry collector
+- real solved-ticket ingestion
+- real Obsidian vault sync
+- image evidence for damaged products
+- fine-tuning
+- vector database/reranker
+- model-as-judge evals
+
+What I would build next:
+
+- connect to real order, tracking, return, refund, helpdesk, and observability APIs
+- replace rule-based classification with semantic intent routing
+- replace TF-IDF with embeddings or hybrid retrieval
+- sync reviewed notes into an Obsidian-compatible vault or internal knowledge base
+- ingest outcomes: repeat contact, delivery confirmation, refund completion, CSAT, agent override
+- add agent accept/edit/reject workflow
+- tune urgency and confidence against real historical tickets
+- add native Arabic review and region-specific tone presets
+
+## Tooling And Provenance
+
+This section is intentionally explicit because tooling transparency is part of the grading rubric.
+
+Runtime tools:
+
+| Tool | Used for |
+|---|---|
+| Python | Core application, CLI, evals |
+| Pydantic | Validated structured output contract |
+| scikit-learn `TfidfVectorizer` | Local TF-IDF policy retrieval and fuzzy memory scoring |
+| Streamlit | One-page internal support workspace |
+| Pytest | Unit/smoke tests |
+| OpenRouter | Optional reply refinement and optional memory reasoning |
 
 Runtime model usage:
 
-- Default verified path: no external LLM call. Decisions, routing, RAG retrieval, validation, EN/AR templates, and evals run locally.
-- Optional path: OpenRouter can be enabled with `USE_LLM_DRAFTS=true` and `OPENROUTER_API_KEY`. It may rewrite `reply_en` and `reply_ar` for tone only after the structured packet is already valid.
-- Model configured for optional path: `google/gemma-4-31b-it:free` by default through OpenRouter, configurable via `OPENROUTER_MODEL`.
-- Why no required runtime LLM: the Track A requirement is non-trivial AI engineering, not mandatory paid inference. This prototype satisfies that through tool use, RAG, structured output validation, multilingual handling, and evals beyond vibes while remaining reproducible without keys.
+- Default path: no external LLM call. The app runs locally and deterministically.
+- Optional reply refinement: `USE_LLM_DRAFTS=true` lets OpenRouter rewrite `reply_en` and `reply_ar` for tone only.
+- Optional memory reasoning: `USE_LLM_MEMORY=true` lets OpenRouter explain why already-retrieved memory candidates are semantically similar.
+- Default optional model: `poolside/laguna-xs.2:free`, configurable with `OPENROUTER_MODEL`.
+- Safety boundary: optional LLM output is discarded if it changes structure, misses expected markers, returns empty text, or fails Pydantic validation. Unsafe-promise cases skip reply refinement entirely.
 
-Resources used:
+AI assistance used during development:
 
-- Official Mumzworld public pages for delivery, FAQ, returns, and contact policy grounding, re-checked on 2026-04-28.
-- Public customer-review signals for problem discovery only.
-- Synthetic order, tracking, product, and return fixtures for implementation and evals.
-- No retailer product-page scraping.
+- Codex/GPT-5 was used as a pair-programming and review assistant for implementation, debugging, documentation, and eval design.
+- AI-assisted review passes challenged problem framing, Arabic quality, UI clarity, eval coverage, and documentation completeness.
+- I kept deterministic tools, schema validation, and evals as the source of truth rather than trusting generated prose.
 
-Official source snapshot:
+Where I overruled AI suggestions:
 
-- Shipping page: UAE same-day delivery for Dubai, Sharjah, and Abu Dhabi; KSA Yalla same-day and non-Yalla 3-5 days.
-- FAQ: return pickup timing is UAE 1-3 business days and KSA 2-5 business days; refunds include wallet, credit card, Mada, and COD-to-wallet behavior.
-- Returns policy / FAQ: eligible returns are tied to a 14-day window and product condition review.
-- Contact / footer pages: support and category context for the internal-agent workflow.
+- kept the scope focused instead of building a broad chatbot
+- avoided LangChain/LlamaIndex-style framework weight for a 5-hour prototype
+- kept OpenRouter optional so the repo runs without paid keys
+- kept memory advisory so it cannot override policy or verified facts
+- separated internal resolution details from customer reply drafts
+- added Arabic static checks after identifying that "Arabic quality" should be tested, not only claimed
+- avoided claims about Mumzworld's internal systems because this repo uses public policy context and synthetic operational data only
 
-How I used AI:
+Material prompt:
 
-- Pair-coding and implementation: Codex proposed and edited code; I kept deterministic tools, Pydantic validation, and evals as the source of truth.
-- Agent loops: subagents independently challenged the problem framing, engineering scope, Arabic quality, eval coverage, and UI/demo clarity.
-- Prompt iteration: the optional OpenRouter prompt in `prompts/system_prompt.md` was narrowed so it may refine wording but not change facts or promises.
-- Eval grading: the eval suite is deterministic Python, not model-graded, so results are reproducible without paid APIs.
+The optional reply-refinement prompt is committed in `prompts/system_prompt.md`. Its key rule is:
 
-Where I overruled agents: I rejected a broad support chatbot, avoided LangChain/LlamaIndex-style framework weight, kept OpenRouter optional, moved raw JSON/tool trace behind expanders, made EN/AR replies mandatory, and added Arabic static checks after the bilingual audit flagged that "Arabic quality" should be tested, not only claimed.
-
-Known limitation: the default classifier is rule-based and keyword-assisted. Similar messages usually work when they contain recognizable signals such as tracking, delivery, refund, pickup, damaged, delivered-but-not-received, or Arabic equivalents. Very indirect wording, unusual slang, typo-heavy text, or a message implying a refund without saying so may be classified as `unknown`, routed to human review, or occasionally placed in the wrong case type. In production, I would replace or augment this with an intent classifier or LLM/embedding-based semantic routing, then keep the current schema and safety validators as guardrails.
+```text
+Rewrite without changing facts or promises. Do not add compensation, ETA, refund approval, policy claims, Ops Memory claims, or internal case-note details.
+```
 
 ## Time Log
 
-- 0:00-0:45 - Re-read Track A, validated the promise-rescue pain point, and rejected broader ideas.
-- 0:45-1:45 - Built schemas, synthetic fixtures, policy notes, and deterministic order/tracking/return tools.
-- 1:45-2:45 - Implemented RAG, decision logic, bilingual replies, safety checks, and optional LLM refinement.
-- 2:45-4:00 - Added eval runner, 16 cases, expanded unit tests, Streamlit UI, and CLI.
-- 4:00-5:00 - Wrote README, EVALS, TRADEOFFS, ARCHITECTURE, and Loom scenarios.
+Base 5-hour scope:
 
-If spending more than 5 hours in a real submission, I would state the overage honestly and attribute it to Arabic QA and eval tuning.
+| Phase | Time | Work |
+|---|---:|---|
+| Scoping | 0:00-0:45 | Chose promise rescue and narrowed the problem |
+| Data + tools | 0:45-1:45 | Built schemas, synthetic fixtures, policy notes, deterministic tools |
+| Engine | 1:45-2:45 | Added RAG, decision logic, bilingual replies, safety checks |
+| Evals + UI | 2:45-4:00 | Added eval runner, 16 cases, unit tests, Streamlit UI, CLI |
+| Docs | 4:00-5:00 | Wrote README, eval notes, tradeoffs, and Loom script |
 
-## Submission Checklist
+Extra refinement after the base scope: Promise Trace, outcome-aware Ops Memory, Obsidian case notes, UI polish, and documentation cleanup. I would disclose this overage because it made the prototype more differentiated and easier to evaluate.
 
-- GitHub repo: push this local repository to GitHub and paste the repo URL here.
-- Loom: record the 3-minute walkthrough from `demos/loom_scenarios.md` and paste the Loom URL here.
+## Loom
+
+Video: [MumzCare Promise Rescue Copilot walkthrough](https://www.loom.com/share/5ec18ddb8e2a40b1a7b54784799067fc)
+
+The Loom covers five inputs end to end:
+
+1. `MW-1001` late formula delivery
+2. `MW-1003` Arabic delivered-but-missing
+3. `MW-1006` card refund timing
+4. `MW-1004` damaged stroller
+5. `MW-1001` unsafe ETA/refund promise refusal

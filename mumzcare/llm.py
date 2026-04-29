@@ -9,7 +9,7 @@ from mumzcare.schemas import DecisionPacket
 load_dotenv()
 
 
-DEFAULT_OPENROUTER_MODEL = "google/gemma-4-31b-it:free"
+DEFAULT_OPENROUTER_MODEL = "poolside/laguna-xs.2:free"
 
 
 def llm_enabled() -> bool:

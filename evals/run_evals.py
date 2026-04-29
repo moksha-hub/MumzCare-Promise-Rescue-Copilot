@@ -30,19 +30,23 @@ def score_case(case: EvalCase) -> dict[str, Any]:
         "promise_block": (not expected.must_block_promise) or bool(packet.unsafe_promises_blocked),
         "schema_valid": True,
         "citation_grounded": packet.case_type.value in {"out_of_scope", "unknown"} or bool(packet.policy_citations),
+        "ops_memory_outcome": packet.case_type.value in {"out_of_scope", "unknown"} or _ops_memory_is_outcome_aware(packet.ops_memory_insights),
+        "obsidian_note": packet.case_type.value in {"out_of_scope", "unknown"} or _obsidian_note_is_present(packet.obsidian_case_note),
         "bilingual_output": bool(packet.reply_en.strip()) and bool(packet.reply_ar.strip()),
         "reply_safety": _reply_is_safe(packet.reply_en + " " + packet.reply_ar, expected.must_block_promise),
         "arabic_quality_static": _arabic_static_checks(packet.reply_ar),
     }
     weights = {
-        "case_type": 0.18,
-        "sla_status": 0.13,
-        "urgency": 0.13,
-        "action": 0.18,
+        "case_type": 0.15,
+        "sla_status": 0.12,
+        "urgency": 0.12,
+        "action": 0.15,
         "human_review": 0.10,
         "promise_block": 0.10,
         "schema_valid": 0.05,
         "citation_grounded": 0.05,
+        "ops_memory_outcome": 0.04,
+        "obsidian_note": 0.04,
         "bilingual_output": 0.04,
         "reply_safety": 0.03,
         "arabic_quality_static": 0.01,
@@ -71,6 +75,8 @@ def score_case(case: EvalCase) -> dict[str, Any]:
             "actions": [action.value for action in packet.recommended_actions],
             "human_review_required": packet.human_review_required,
             "unsafe_promises_blocked": packet.unsafe_promises_blocked,
+            "ops_memory_insights": [insight.model_dump(mode="json") for insight in packet.ops_memory_insights],
+            "obsidian_case_note_present": bool(packet.obsidian_case_note and packet.obsidian_case_note.strip()),
             "confidence": packet.confidence,
         },
     }
@@ -108,6 +114,29 @@ def _arabic_static_checks(reply_ar: str) -> bool:
     if any(token in reply_ar for token in raw_tokens):
         return False
     return any("\u0600" <= char <= "\u06FF" for char in reply_ar)
+
+
+def _ops_memory_is_outcome_aware(insights: list[Any]) -> bool:
+    if not insights:
+        return False
+    insight = insights[0]
+    return (
+        bool(insight.memory_id.strip())
+        and 0.0 <= insight.similarity_score <= 1.0
+        and bool(insight.prior_action.strip())
+        and insight.resolution_outcome in {"resolved", "re_escalated", "churned", "pending"}
+        and insight.outcome_signal.resolution_hours >= 0
+        and bool(insight.lesson.strip())
+        and bool(insight.recommended_playbook)
+        and bool(insight.semantic_reasoning.strip())
+    )
+
+
+def _obsidian_note_is_present(note: str | None) -> bool:
+    if not note:
+        return False
+    required_markers = ["---", "[[Teams/", "## Verified Facts", "## Closure Outcome"]
+    return all(marker in note for marker in required_markers)
 
 
 def run_evals() -> dict[str, Any]:

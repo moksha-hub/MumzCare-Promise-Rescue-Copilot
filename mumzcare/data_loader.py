@@ -36,5 +36,15 @@ def products() -> dict[str, dict[str, Any]]:
     return {row["sku"]: row for row in load_json("products.json")}
 
 
+@lru_cache(maxsize=1)
+def promise_traces() -> dict[str, dict[str, Any]]:
+    return {row["order_id"]: row for row in load_json("promise_traces.json")}
+
+
+@lru_cache(maxsize=1)
+def memory_cases() -> list[dict[str, Any]]:
+    return load_json("memory_cases.json")
+
+
 def policy_text() -> str:
     return (DATA_DIR / "policy_docs.md").read_text(encoding="utf-8")
